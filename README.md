@@ -4,7 +4,7 @@ Historiador de formação, apaixonado por tecnologia e futuro engenheiro de comp
 
 🌟 Um Pouco Sobre Mim
 📜 Historiador e Educador: Formado em História com especialização em Metodologia do Ensino. Aprendi a tornar o aprendizado mais envolvente e a conectar conteúdos com a realidade dos alunos.
-💻 Aspirante a Engenheiro de Computação: No segundo semestre da graduação, estou explorando como a tecnologia pode ser uma aliada poderosa na educação.
+💻 Aspirante a Engenheiro de Computação: No quarto semestre da graduação, estou explorando como a tecnologia pode ser uma aliada poderosa na educação.
 🌱 Aprendiz Incansável: Em constante busca por conhecimento em matemática, programação e tudo que possa me ajudar a construir soluções inovadoras.
 🚀 Habilidades Técnicas
 HTML & CSS: Domínio na criação de layouts modernos e responsivos.
