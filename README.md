@@ -1,4 +1,4 @@
-# THIAGO FERNANDO
+# THIAGO FERNANDO A. A. DOS SANTOS
 
 ### Desenvolvedor Front-end com uma Perspectiva Única
 
@@ -34,23 +34,23 @@ Tenho um conjunto de habilidades sólido, fortalecido pela minha formação e po
 
 ### 📂 Estudos de Caso: Projetos em Destaque
 
-A seguir, dois projetos que demonstram minha capacidade de transformar ideias em produtos funcionais.
+Entre os projetos que desenvolvi, estes dois representam minha capacidade de criar tanto aplicações complexas e ricas em UI, quanto plataformas com forte propósito social.
 
 #### 🦉 **OLLO: Uma Rede Social com Identidade Cultural**
 * **Desafio:** Criar uma plataforma social com uma identidade única, fugindo de clones genéricos.
 * **Solução:** Desenvolvi o OLLO, um protótipo inspirado na cultura galega, onde a palavra "Ollo" (olho/atenção) guia a experiência do usuário. A interface é moderna, construída com **React, Vite e Tailwind CSS**, e inclui funcionalidades como temas (claro/escuro), sistema de posts, likes e comentários, tudo com foco em uma UI polida e rica em storytelling.
 * **Link:** `https://github.com/Thiago-spba/App-OLLO`
 
-#### ♻️ **Comdidos: Sistema de Pedidos com React e Firebase**
-* **Desafio:** Construir um sistema de ponta a ponta para gerenciar pedidos de um restaurante.
-* **Solução:** Criei o Comdidos, uma aplicação web completa para gerenciamento de pedidos de comida. O projeto, feito com **React e Firebase**, inclui cadastro de clientes e produtos, carrinho de compras e processamento de pedidos, demonstrando minha capacidade de integrar o front-end com serviços de backend (BaaS) para criar uma solução de negócio funcional.
-* **Link:** `https://github.com/Thiago-spba/comdidos`
+#### ♻️ **EcoConecta: Conectando Pessoas pela Sustentabilidade**
+* **Desafio:** Construir uma plataforma digital que unisse pessoas engajadas com o meio ambiente de forma inclusiva e acessível.
+* **Solução:** Criei o EcoConecta, um portal que visa educar, engajar e conectar. Com foco máximo em **acessibilidade (WCAG)** e **SEO**, a plataforma foi desenvolvida com **HTML5 Semântico, CSS3 e JavaScript** para garantir que a mensagem sobre sustentabilidade chegue a todos, sem barreiras.
+* **Link:** `eco-conecta-sigma.vercel.app]`
 
 ---
 
 ### 🎓 Formação Intensiva: Oracle ONE
 
-Participei da 7ª turma do **Oracle Next Education (ONE)**, um programa completo em parceria com a Alura, que incluiu:
+Participei da 7ª turma do **Oracle Next Education (ONE), um programa completo em parceria com a Alura, que incluiu:
 * **Formação Front-end (240 horas):** Foco em `HTML5`, `CSS3`, `JavaScript`, `React.js` e consumo de APIs.
 * **Soft Skills e Metodologias Ágeis (80 horas):** Treinamento em `Scrum`, `Kanban`, comunicação e trabalho em equipe.
 
