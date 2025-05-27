@@ -44,13 +44,13 @@ Entre os projetos que desenvolvi, estes dois representam minha capacidade de cri
 #### ♻️ **EcoConecta: Conectando Pessoas pela Sustentabilidade**
 * **Desafio:** Construir uma plataforma digital que unisse pessoas engajadas com o meio ambiente de forma inclusiva e acessível.
 * **Solução:** Criei o EcoConecta, um portal que visa educar, engajar e conectar. Com foco máximo em **acessibilidade (WCAG)** e **SEO**, a plataforma foi desenvolvida com **HTML5 Semântico, CSS3 e JavaScript** para garantir que a mensagem sobre sustentabilidade chegue a todos, sem barreiras.
-* **Link:** `eco-conecta-sigma.vercel.app]`
+* **Link:** `eco-conecta-sigma.vercel.app`
 
 ---
 
 ### 🎓 Formação Intensiva: Oracle ONE
 
-Participei da 7ª turma do **Oracle Next Education (ONE), um programa completo em parceria com a Alura, que incluiu:
+Participei da 7ª turma do **Oracle Next Education (ONE)**, um programa completo em parceria com a Alura, que incluiu:
 * **Formação Front-end (240 horas):** Foco em `HTML5`, `CSS3`, `JavaScript`, `React.js` e consumo de APIs.
 * **Soft Skills e Metodologias Ágeis (80 horas):** Treinamento em `Scrum`, `Kanban`, comunicação e trabalho em equipe.
 
