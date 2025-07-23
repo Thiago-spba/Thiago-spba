@@ -1,6 +1,6 @@
 # Thiago Fernando A. A. dos Santos
 
-> **Desenvolvedor Front-End Júnior | Estudante de Engenharia da Computação**
+> **Desenvolvedor Full Stack | Estudante de Engenharia da Computação**
 
 ---
 
@@ -9,7 +9,7 @@
 Sou um profissional multidisciplinar em transição para tecnologia, unindo análise crítica da História, lógica da Matemática e técnica da Engenharia da Computação para criar soluções digitais criativas, eficientes e centradas no usuário.
 
 - **Engenharia da Computação** (4º semestre – Universidade Celso Lisboa)
-- **Licenciatura em Matemática** (em andamento)
+- **Licenciatura em Matemática** (concluído)
 - **Licenciatura e Pós em História** (concluído)
 - **Formação Oracle ONE + Alura:** Front-end, Cloud e Soft Skills
 
