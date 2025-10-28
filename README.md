@@ -1,4 +1,4 @@
-# Thiago Fernando | Desenvolvedor Front-End
+# Thiago Fernando | Desenvolvedor Full-Stack (React & Firebase)
 
 *Com uma trajetória na área educacional, estou agora em transição de carreira e dedicando meus estudos à Tecnologias e a Engenharia da Computação. Busco minha primeira oportunidade como desenvolvedor para aprender com a equipe, aplicar meus conhecimentos e contribuir para novos projetos.*
 
@@ -19,10 +19,11 @@
 | Categoria | Tecnologias |
 | :--- | :--- |
 | **Linguagens** | `JavaScript (ES6+)` `HTML5` `CSS3` |
-| **Frameworks & Libs** | `React.js` `Styled-components` `Tailwind CSS` `Vite` |
-| **Ferramentas & Plataformas** | `Git` `GitHub` `VS Code` `Firebase` `Figma (Básico)` |
+| **Front-End** | `React.js` `Styled-components` `Tailwind CSS` `Vite` |
+| **Back-End & DB** | `Firebase (Autenticação & Firestore)` |
+| **Ferramentas & Plataformas** | `Git` `GitHub` `VS Code` `Figma (Básico)` |
 | **Metodologias** | `Scrum` `Kanban` `Metodologias Ágeis` |
-| **Estudando Atualmente** | `Node.js` `Oracle Cloud` `DevOps (CI/CD)` |
+| **Estudando Atualmente** | `Node.js` `SQL` `Oracle Cloud` `DevOps (CI/CD)` |
 
 ---
 
@@ -30,7 +31,8 @@
 
 ### 1. OLLO – Rede Social Cultural
 > Plataforma social com identidade única e interface moderna, focada em storytelling e na criação de comunidades.
-> - **Tecnologias:** `React`, `Vite`, `Tailwind CSS`, `Firebase`
+> - **Front-End:** `React`, `Vite`, `Tailwind CSS`
+> - **Back-End:** `Firebase` (para autenticação de usuários e banco de dados NoSQL/Firestore).
 > - **[Acesse o repositório](https://github.com/Thiago-spba/App-OLLO)**
 
 ### 2. EcoConecta – Portal sobre Sustentabilidade
