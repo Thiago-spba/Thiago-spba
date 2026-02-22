@@ -20,7 +20,7 @@
 
 Sou Thiago, estudante de **Engenharia da Computação** e desenvolvedor Full-Stack em transição de carreira. Antes de programar, fui professor — formado em **Matemática** e **História** —, o que me deu algo raro em tech: a capacidade de **comunicar com clareza** e aprender com profundidade.
 
-Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acumulando mais de **500h de formação prática** em desenvolvimento, cloud, banco de dados e cibersegurança. Tenho projetos reais no ar e estou buscando minha **primeira oportunidade como Dev Júnior ou Estagiário**.
+Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acumulando mais de **1.000h de formação prática** em desenvolvimento, cloud, banco de dados e cibersegurança. Tenho projetos reais no ar e estou buscando minha **primeira oportunidade como Dev Júnior ou Estagiário**.
 
 > _"Confia ao Senhor as tuas obras, e teus planos serão estabelecidos." (Provérbios 16:3)_
 
