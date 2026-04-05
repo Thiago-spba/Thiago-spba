@@ -1,10 +1,6 @@
 <div align="center">
 
-# Thiago Fernando
-### Desenvolvedor Front-End Júnior · São Paulo, SP
-
-*Engenharia da Computação em andamento — app real em produção.*
-*Aberto a Estágio e CLT.*
+<img src="https://capsule-render.vercel.app/api?type=waving&color=1A56DB&height=120&section=header&text=Thiago%20Fernando&fontSize=36&fontColor=ffffff&fontAlignY=40&desc=Desenvolvedor%20Front-End%20%C2%B7%20S%C3%A3o%20Paulo%2C%20SP&descSize=16&descAlignY=65&descColor=c8d6f8" />
 
 [![Portfolio](https://img.shields.io/badge/Portfólio-0a0f1e?style=for-the-badge&logo=vercel&logoColor=white)](https://portfolio-thiagosp.vercel.app/)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/thiagospabc)
@@ -21,21 +17,30 @@ Sou Thiago, desenvolvedor Front-End cursando o **5º semestre de Engenharia da C
 
 Não aprendo só em curso. Construí e mantenho o **OLLO** ([olloapp.com.br](https://olloapp.com.br)), um marketplace social com usuários reais, desenvolvido solo nos fins de semana com React, Firebase e PWA. É meu maior diferencial — e prova que entrego código que funciona de verdade.
 
-Mais de **1.000h de formação** entre Oracle ONE + Alura e Bootcamp Santander DIO. Busco minha primeira oportunidade como **Estagiário ou Dev Front-End Júnior (CLT)**.
+Mais de **1.000h de formação** entre Oracle ONE + Alura e Bootcamp Santander DIO.
 
 ---
 
 ## 🛠️ Stack & Tecnologias
 
-| Categoria | Tecnologias |
-| :--- | :--- |
-| **Front-End** | `React.js` `Vite` `JavaScript ES6+` `HTML5` `CSS3` `Tailwind CSS` `Styled Components` |
-| **Back-End / Cloud** | `Firebase Auth` `Firestore (NoSQL)` `Firebase Hosting` `REST APIs` `Node.js` |
-| **Banco de Dados** | `MySQL` `SQL` `Firestore (NoSQL)` `MongoDB` `JDBC` |
-| **DevOps & Cloud** | `Git` `GitHub` `AWS` `Oracle Cloud` `Linux` `PWA` `Service Workers` |
-| **Back-End Java** | `Java` `Spring Boot` `Spring Security` `Design Patterns (GoF)` `Maven` |
-| **Outros** | `Acessibilidade WCAG` `SEO` `Figma` `Scrum / Kanban` |
-| **Estudando** | `TypeScript` `Docker` `Microsserviços` |
+<div align="center">
+
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-studying-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
+![Tailwind](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)
+![Java](https://img.shields.io/badge/Java-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)
+![Spring](https://img.shields.io/badge/Spring_Boot-6DB33F?style=for-the-badge&logo=spring-boot&logoColor=white)
+![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
+
+</div>
 
 ---
 
@@ -206,17 +211,16 @@ Mais de **1.000h de formação** entre Oracle ONE + Alura e Bootcamp Santander D
 
 <div align="center">
 
-![Thiago's GitHub Stats](https://github-readme-stats.vercel.app/api?username=Thiago-spba&show_icons=true&theme=tokyonight&hide_border=true&bg_color=07111f&title_color=1A56DB&icon_color=1A56DB&text_color=e2eaf5)
-
-![Top Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=Thiago-spba&layout=compact&theme=tokyonight&hide_border=true&bg_color=07111f&title_color=1A56DB&text_color=e2eaf5)
+<a href="https://github.com/Thiago-spba">
+  <img height="160em" src="https://github-readme-stats.vercel.app/api?username=Thiago-spba&show_icons=true&theme=tokyonight&hide_border=true&bg_color=07111f&title_color=1A56DB&icon_color=1A56DB&text_color=e2eaf5&count_private=true"/>
+  <img height="160em" src="https://github-readme-stats.vercel.app/api/top-langs/?username=Thiago-spba&layout=compact&theme=tokyonight&hide_border=true&bg_color=07111f&title_color=1A56DB&text_color=e2eaf5&langs_count=8"/>
+</a>
 
 </div>
 
 ---
 
 ## 📫 Contato
-
-Estou aberto a vagas de **estágio ou desenvolvedor júnior (CLT)**. Se você busca alguém com projeto real entregue, raciocínio lógico sólido e comunicação clara — me chama!
 
 | | |
 | :--- | :--- |
@@ -227,8 +231,6 @@ Estou aberto a vagas de **estágio ou desenvolvedor júnior (CLT)**. Se você bu
 
 <div align="center">
 
----
-
-*Construindo com dedicação. Aberto a conversas.* ☕
+<img src="https://capsule-render.vercel.app/api?type=waving&color=1A56DB&height=80&section=footer"/>
 
 </div>
