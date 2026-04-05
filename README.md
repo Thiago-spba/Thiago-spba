@@ -1,15 +1,14 @@
 <div align="center">
 
 # Thiago Fernando
-### Desenvolvedor Full-Stack · São Paulo, SP
+### Desenvolvedor Front-End Júnior · São Paulo, SP
 
-*Professor por formação — desenvolvedor por escolha.*
-*Em transição de carreira, construindo com dedicação e aprendizado constante.*
+*Engenharia da Computação em andamento — app real em produção.*
+*Aberto a Estágio e CLT.*
 
-[![Portfolio](https://img.shields.io/badge/Portfólio-07111f?style=for-the-badge&logo=vercel&logoColor=white)](https://portfolio-thiagosp.vercel.app/)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/thiagospfernando/)
-[![GitHub](https://img.shields.io/badge/GitHub-161b22?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Thiago-spba)
-[![Alura](https://img.shields.io/badge/Alura%20ONE-0056D2?style=for-the-badge&logo=alura&logoColor=white)](https://cursos.alura.com.br/user/thiagofernando-sp)
+[![Portfolio](https://img.shields.io/badge/Portfólio-0a0f1e?style=for-the-badge&logo=vercel&logoColor=white)](https://portfolio-thiagosp.vercel.app/)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/thiagospabc)
+[![OLLO App](https://img.shields.io/badge/OLLO_App-1A56DB?style=for-the-badge&logo=firebase&logoColor=white)](https://olloapp.com.br)
 [![Email](https://img.shields.io/badge/Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:thiagofernando_sp@yahoo.com.br)
 
 </div>
@@ -18,11 +17,11 @@
 
 ## 👋 Sobre mim
 
-Sou Thiago, estudante de **Engenharia da Computação** e desenvolvedor Full-Stack em transição de carreira. Antes de programar, fui professor — formado em **Matemática** e **História** —, o que me deu algo raro em tech: a capacidade de **comunicar com clareza** e aprender com profundidade.
+Sou Thiago, desenvolvedor Front-End cursando o **5º semestre de Engenharia da Computação** na Celso Lisboa. Antes de programar, fui professor de Matemática e História — o que me deu algo raro em tech: **comunicação clara e raciocínio lógico sólido**.
 
-Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acumulando mais de **1.000h de formação prática** em desenvolvimento, cloud, banco de dados e cibersegurança. Tenho projetos reais no ar e estou buscando minha **primeira oportunidade como Dev Júnior ou Estagiário**.
+Não aprendo só em curso. Construí e mantenho o **OLLO** ([olloapp.com.br](https://olloapp.com.br)), um marketplace social com usuários reais, desenvolvido solo nos fins de semana com React, Firebase e PWA. É meu maior diferencial — e prova que entrego código que funciona de verdade.
 
-> _"Confia ao Senhor as tuas obras, e teus planos serão estabelecidos." (Provérbios 16:3)_
+Mais de **1.000h de formação** entre Oracle ONE + Alura e Bootcamp Santander DIO. Busco minha primeira oportunidade como **Estagiário ou Dev Front-End Júnior (CLT)**.
 
 ---
 
@@ -30,71 +29,67 @@ Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acu
 
 | Categoria | Tecnologias |
 | :--- | :--- |
-| **Front-End** | `React.js` `Vite` `JavaScript ES6+` `HTML5 Semântico` `CSS3` `Tailwind CSS` `Styled Components` |
-| **Back-End** | `Java` `Spring Boot` `Spring Security` `Node.js` `Firebase` `REST APIs` |
-| **Banco de Dados** | `SQL / MySQL` `MongoDB` `Firestore (NoSQL)` `JDBC` |
-| **DevOps & Cloud** | `Git` `GitHub` `AWS` `Oracle Cloud` `Linux` `CI/CD` |
-| **Outros** | `Figma` `Acessibilidade WCAG` `SEO` `PWA` `Design Patterns (GoF)` |
-| **Estudando** | `Docker` `Microsserviços` `TypeScript` |
+| **Front-End** | `React.js` `Vite` `JavaScript ES6+` `HTML5` `CSS3` `Tailwind CSS` `Styled Components` |
+| **Back-End / Cloud** | `Firebase Auth` `Firestore (NoSQL)` `Firebase Hosting` `REST APIs` `Node.js` |
+| **Banco de Dados** | `MySQL` `SQL` `Firestore (NoSQL)` `MongoDB` `JDBC` |
+| **DevOps & Cloud** | `Git` `GitHub` `AWS` `Oracle Cloud` `Linux` `PWA` `Service Workers` |
+| **Back-End Java** | `Java` `Spring Boot` `Spring Security` `Design Patterns (GoF)` `Maven` |
+| **Outros** | `Acessibilidade WCAG` `SEO` `Figma` `Scrum / Kanban` |
+| **Estudando** | `TypeScript` `Docker` `Microsserviços` |
 
 ---
 
 ## 🚀 Projetos em Destaque
 
-### 🔵 Full-Stack
+### 🔵 [OLLO — Marketplace Social com Afiliados](https://olloapp.com.br)
+> App real em produção com usuários ativos. Desenvolvido solo, nos fins de semana.
 
-#### [OLLO – Rede Social Cultural](https://app-ollo.vercel.app)
-> Plataforma social completa com autenticação de usuários e banco de dados em tempo real.
-> - **Front-End:** `React` `Vite` `Tailwind CSS`
-> - **Back-End:** `Firebase Auth` `Firestore (NoSQL)`
-> - 🔒 Repositório privado — código protege dados de usuários reais
-
-#### [Dashboard Tisanaria – BI & CRM com IA](https://github.com/Thiago-spba/dashboard-tisanaria-react)
-> Sistema de Business Intelligence para produtos naturais com integração de IA.
-> - **Tecnologias:** `React` `Tailwind CSS` `Gemini API`
-> - **[Ver repositório](https://github.com/Thiago-spba/dashboard-tisanaria-react)**
+- **Stack:** `React` `Vite` `Firebase Auth` `Firestore` `Tailwind CSS` `PWA`
+- Autenticação completa, banco NoSQL em tempo real, push notifications com VAPID/FCM
+- Admin Dashboard: Master Switch, templates de notificações com emoji picker e histórico
+- PWA instalável com service worker e domínio próprio (olloapp.com.br)
+- Integração com afiliados Shopee via API
+- 🔒 Repositório privado — protege dados de usuários reais
 
 ---
 
 ### 🟦 Front-End
 
-#### [Cineflix História – Plataforma de Vídeos Educativos](https://github.com/Thiago-spba/cineflix-historia)
-> Plataforma de vídeos com conteúdo histórico e back-end simulado com JSON Server.
-> - **Tecnologias:** `JavaScript` `JSON Server` `REST API` `YouTube Player`
-> - **[Ver repositório](https://github.com/Thiago-spba/cineflix-historia)**
+#### [Dashboard Tisanaria — BI com IA](https://github.com/Thiago-spba/dashboard-tisanaria-react)
+> Business Intelligence para negócio real com relatórios gerados por IA.
+> `React` `Tailwind CSS` `Gemini API`
 
-#### [EcoConecta – Portal de Sustentabilidade](https://eco-conecta-sigma.vercel.app/)
-> Portal com foco em Acessibilidade (WCAG), HTML semântico e SEO.
-> - **Tecnologias:** `HTML5 Semântico` `CSS3` `JavaScript`
-> - **[Ver deploy](https://eco-conecta-sigma.vercel.app/)** · **[Repositório](https://github.com/Thiago-spba/EcoConecta)**
+#### [EcoConecta — Portal de Sustentabilidade](https://eco-conecta-sigma.vercel.app/)
+> Portal com foco em acessibilidade WCAG, HTML semântico e SEO.
+> `HTML5` `CSS3` `JavaScript` · [Deploy](https://eco-conecta-sigma.vercel.app/) · [Repositório](https://github.com/Thiago-spba/EcoConecta)
+
+#### [Cineflix História — Plataforma de Vídeos Educativos](https://github.com/Thiago-spba/cineflix-historia)
+> Plataforma de vídeos históricos com back-end simulado via JSON Server.
+> `JavaScript` `JSON Server` `REST API` `YouTube Player`
 
 #### [Calculadora de Tempo de Tela](https://github.com/Thiago-spba/calculadora-tempo-tela)
-> Projeto de Extensão Universitária sobre saúde digital e uso consciente de dispositivos.
-> - **Tecnologias:** `HTML5` `CSS3` `JavaScript`
+> Projeto de Extensão Universitária sobre saúde digital.
+> `HTML5` `CSS3` `JavaScript`
 
 #### [Jogo Geométrico Interativo](https://github.com/Thiago-spba/Jogo-Geom-trico)
 > Jogo web com gráficos gerados pela biblioteca p5.js.
-> - **Tecnologias:** `JavaScript` `p5.js` `HTML5 Canvas`
+> `JavaScript` `p5.js` `HTML5 Canvas`
 
 ---
 
 ### ☕ Back-End Java
 
-#### [OlloApp Board Manager – Kanban em Java](https://github.com/Thiago-spba/olloapp-board-manager)
-> Sistema de gerenciamento de quadros Kanban com boards, colunas e cards.
-> - **Tecnologias:** `Java` `OOP` `Clean Code`
+#### [OlloApp Board Manager — Kanban em Java](https://github.com/Thiago-spba/olloapp-board-manager)
+> Sistema Kanban com boards, colunas e cards. `Java` `OOP` `Clean Code`
 
-#### [Sudoku em Java – Git Flow & Clean Code](https://github.com/Thiago-spba/sudoku)
-> Implementação do Sudoku com foco em boas práticas: Git Flow, Clean Code e Javadoc.
-> - **Tecnologias:** `Java` `Git Flow` `Javadoc`
+#### [Sudoku em Java — Git Flow & Clean Code](https://github.com/Thiago-spba/sudoku)
+> Implementação com foco em boas práticas. `Java` `Git Flow` `Javadoc`
 
-#### [Design Patterns – Strategy em Java](https://github.com/Thiago-spba/lab-padroes-projeto-java)
-> Padrão de Projeto Strategy para cálculo de fretes — Bootcamp DIO.
-> - **Tecnologias:** `Java` `Design Patterns` `GoF`
+#### [Design Patterns — Strategy em Java](https://github.com/Thiago-spba/lab-padroes-projeto-java)
+> Padrão Strategy para cálculo de fretes. `Java` `Design Patterns` `GoF`
 
 #### [Abstraindo um Bootcamp com POO](https://github.com/Thiago-spba/desafio-poo-dio)
-> Abstração de um Bootcamp usando os 4 pilares de OOP em Java.
-> - **Tecnologias:** `Java` `Abstração` `Encapsulamento` `Herança` `Polimorfismo`
+> Os 4 pilares de OOP em Java. `Abstração` `Encapsulamento` `Herança` `Polimorfismo`
 
 ---
 
@@ -104,15 +99,29 @@ Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acu
 | :--- | :--- | :--- |
 | **Engenharia da Computação** | Centro Universitário Celso Lisboa | 🟡 Cursando · 5º Semestre |
 | **Licenciatura em Matemática** | Centro Universitário Ítalo Brasileiro | ✅ Concluída · 2025 |
-| **Licenciatura em História** | Centro Universitário Anhanguera Pitágoras AMPLI | ✅ Concluída · 2024 |
-| **Pós-Graduação em Metodologia de Ensino de História** | Faculdade Focus | ✅ Concluída · 2024 |
+| **Licenciatura em História** | Anhanguera Pitágoras AMPLI | ✅ Concluída · 2024 |
+| **Pós em Metodologia de Ensino** | Faculdade Focus | ✅ Concluída · 2024 |
 
 ---
 
 ## 📜 Certificações (1.000h+)
 
 <details>
-<summary><b>☕ Java & Back-End (15 certificados)</b></summary>
+<summary><b>⚛️ Front-End & React (8 certificados)</b></summary>
+
+- Lógica de Programação com JavaScript
+- HTML e CSS: Fundamentos e Responsividade
+- JavaScript para Web: Páginas Dinâmicas
+- JavaScript: Consumindo APIs
+- React: Componentes, Hooks e Router
+- React: Context API e Estados Globais
+- Git e GitHub: Colaborando em Projetos
+- Contribuindo em Projetos Open Source
+
+</details>
+
+<details>
+<summary><b>☕ Java & Back-End (15 certificados) — Bootcamp Santander DIO</b></summary>
 
 - Fundamentos da Linguagem Java
 - Sintaxe Básica e Estruturas de Controle em Java
@@ -133,18 +142,6 @@ Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acu
 </details>
 
 <details>
-<summary><b>🗄️ Banco de Dados (6 certificados)</b></summary>
-
-- Introdução a Banco de Dados Relacionais (SQL)
-- SQL com MySQL: Manipular e Consultar Dados
-- SQL Avançado: Procedures e Administração
-- Introdução ao MongoDB e NoSQL
-- JDBC: Persistência de Dados com Java
-- Integração Java com Banco de Dados
-
-</details>
-
-<details>
 <summary><b>☁️ AWS & Cloud (6 certificados)</b></summary>
 
 - Introdução ao Conceito de Cloud (AWS)
@@ -157,7 +154,19 @@ Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acu
 </details>
 
 <details>
-<summary><b>🔐 Cibersegurança (6 certificados)</b></summary>
+<summary><b>🗄️ Banco de Dados (6 certificados)</b></summary>
+
+- Introdução a Banco de Dados Relacionais (SQL)
+- SQL com MySQL: Manipular e Consultar Dados
+- SQL Avançado: Procedures e Administração
+- Introdução ao MongoDB e NoSQL
+- JDBC: Persistência de Dados com Java
+- Integração Java com Banco de Dados
+
+</details>
+
+<details>
+<summary><b>🔐 Cibersegurança (8 certificados) — Bootcamp Santander DIO</b></summary>
 
 - Fundamentos de Cibersegurança
 - Fundamentos de Pentest
@@ -165,20 +174,8 @@ Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acu
 - Exploração de Vulnerabilidades
 - Man in the Middle: Ataques e Mitigações
 - Fundamentos de Redes de Computadores
-
-</details>
-
-<details>
-<summary><b>⚛️ Front-End & React (8 certificados)</b></summary>
-
-- Lógica de Programação com JavaScript
-- HTML e CSS: Fundamentos e Responsividade
-- JavaScript para Web: Páginas Dinâmicas
-- JavaScript: Consumindo APIs
-- React: Componentes, Hooks e Router
-- React: Context API e Estados Globais
-- Git e GitHub: Colaborando em Projetos
-- Contribuindo em Projetos Open Source
+- Pós-Exploração em Sistemas Comprometidos
+- Introdução à Deep Web e Anonimato
 
 </details>
 
@@ -193,12 +190,13 @@ Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acu
 </details>
 
 <details>
-<summary><b>🤖 IA & Python (4 certificados)</b></summary>
+<summary><b>🤖 IA & Python (5 certificados)</b></summary>
 
 - Python para Dados: Primeiros Passos
 - Análise de Dados com Python e ChatGPT
 - GPT e Python: Criando Ferramentas com a API
 - Inteligência Artificial e UX
+- Aprendizagem: Personalizando com ChatGPT
 
 </details>
 
@@ -208,9 +206,9 @@ Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acu
 
 <div align="center">
 
-![Thiago's GitHub Stats](https://github-readme-stats.vercel.app/api?username=Thiago-spba&show_icons=true&theme=tokyonight&hide_border=true&bg_color=07111f&title_color=4d8fff&icon_color=f5a623&text_color=e2eaf5)
+![Thiago's GitHub Stats](https://github-readme-stats.vercel.app/api?username=Thiago-spba&show_icons=true&theme=tokyonight&hide_border=true&bg_color=07111f&title_color=1A56DB&icon_color=1A56DB&text_color=e2eaf5)
 
-![Top Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=Thiago-spba&layout=compact&theme=tokyonight&hide_border=true&bg_color=07111f&title_color=4d8fff&text_color=e2eaf5)
+![Top Languages](https://github-readme-stats.vercel.app/api/top-langs/?username=Thiago-spba&layout=compact&theme=tokyonight&hide_border=true&bg_color=07111f&title_color=1A56DB&text_color=e2eaf5)
 
 </div>
 
@@ -218,18 +216,19 @@ Participei do **Oracle ONE (Alura)** e do **Bootcamp Santander 2025 (DIO)**, acu
 
 ## 📫 Contato
 
-Estou aberto a vagas de **estágio ou desenvolvedor júnior**. Se você valoriza alguém com vontade genuína de aprender, comunicação clara e base técnica sólida — me chama!
+Estou aberto a vagas de **estágio ou desenvolvedor júnior (CLT)**. Se você busca alguém com projeto real entregue, raciocínio lógico sólido e comunicação clara — me chama!
 
 | | |
 | :--- | :--- |
 | 📧 **E-mail** | thiagofernando_sp@yahoo.com.br |
-| 💼 **LinkedIn** | [linkedin.com/in/thiagospfernando](https://www.linkedin.com/in/thiagospfernando/) |
+| 💼 **LinkedIn** | [linkedin.com/in/thiagospabc](https://www.linkedin.com/in/thiagospabc) |
 | 🌐 **Portfólio** | [portfolio-thiagosp.vercel.app](https://portfolio-thiagosp.vercel.app/) |
+| 🚀 **OLLO App** | [olloapp.com.br](https://olloapp.com.br) |
 
 <div align="center">
 
 ---
 
-*Desenvolvido com dedicação e aprendizado constante* ☕
+*Construindo com dedicação. Aberto a conversas.* ☕
 
 </div>
