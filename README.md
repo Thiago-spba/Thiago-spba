@@ -5,6 +5,7 @@
 [![Portfolio](https://img.shields.io/badge/Portfólio-0a0f1e?style=for-the-badge&logo=vercel&logoColor=white)](https://portfolio-thiagosp.vercel.app/)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/thiagospabc)
 [![OLLO App](https://img.shields.io/badge/OLLO_App-1A56DB?style=for-the-badge&logo=firebase&logoColor=white)](https://olloapp.com.br)
+[![EduPlay](https://img.shields.io/badge/EduPlay-10B981?style=for-the-badge&logo=firebase&logoColor=white)](https://eduplay.olloapp.com.br)
 [![Email](https://img.shields.io/badge/Email-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:thiagofernando_sp@yahoo.com.br)
 
 </div>
@@ -13,9 +14,11 @@
 
 ## 👋 Sobre mim
 
-Sou Thiago, desenvolvedor Front-End cursando o **5º semestre de Engenharia da Computação** na Celso Lisboa. Antes de programar, fui professor de Matemática e História — o que me deu algo raro em tech: **comunicação clara e raciocínio lógico sólido**.
+Sou desenvolvedor Front-End com base Full-Stack, cursando o **5º semestre de Engenharia da Computação**. Antes de programar, fui professor — o que me deu algo útil em tech: comunicação clara e paciência para resolver problemas difíceis.
 
-Não aprendo só em curso. Construí e mantenho o **OLLO** ([olloapp.com.br](https://olloapp.com.br)), um marketplace social com usuários reais, desenvolvido solo nos fins de semana com React, Firebase e PWA. É meu maior diferencial — e prova que entrego código que funciona de verdade.
+Construí e mantenho dois produtos reais em produção, desenvolvidos solo:
+- **OLLO** ([olloapp.com.br](https://olloapp.com.br)) — marketplace social com afiliados, usuários ativos e Admin Dashboard completo
+- **EduPlay** ([eduplay.olloapp.com.br](https://eduplay.olloapp.com.br)) — plataforma educacional gamificada para crianças, com IA integrada e conformidade ECA Digital
 
 Mais de **1.000h de formação** entre Oracle ONE + Alura e Bootcamp Santander DIO.
 
@@ -46,23 +49,35 @@ Mais de **1.000h de formação** entre Oracle ONE + Alura e Bootcamp Santander D
 
 ## 🚀 Projetos em Destaque
 
-### 🔵 [OLLO — Marketplace Social com Afiliados](https://olloapp.com.br)
+### 🔵 [OLLO — Marketplace Social](https://olloapp.com.br)
 > App real em produção com usuários ativos. Desenvolvido solo, nos fins de semana.
 
 - **Stack:** `React` `Vite` `Firebase Auth` `Firestore` `Tailwind CSS` `PWA`
 - Autenticação completa, banco NoSQL em tempo real, push notifications com VAPID/FCM
-- Admin Dashboard: Master Switch, templates de notificações com emoji picker e histórico
-- PWA instalável com service worker e domínio próprio (olloapp.com.br)
-- Integração com afiliados Shopee via API
+- Admin Dashboard: Master Switch, templates de notificações e histórico
+- PWA instalável com service worker e domínio próprio
+- Conformidade ECA Digital com fluxo de consentimento parental
 - 🔒 Repositório privado — protege dados de usuários reais
+
+---
+
+### 🟢 [EduPlay — Plataforma Educacional Gamificada](https://eduplay.olloapp.com.br)
+> Plataforma para crianças de 11 a 13 anos baseada em missões, podcasts e jogos.
+
+- **Stack:** `React` `Vite` `Firebase` `Claude API` `PWA`
+- IA gerando conteúdo pedagógico via Cloud Functions
+- 5 disciplinas cobrindo o currículo municipal de SP (6º ao 9º ano)
+- Painel dos responsáveis com senha master, timer e metas
+- Conformidade ECA Digital (Lei 14.155/2021) e LGPD
+- Podcast com legenda sincronizada palavra por palavra
 
 ---
 
 ### 🟦 Front-End
 
 #### [Dashboard Tisanaria — BI com IA](https://github.com/Thiago-spba/dashboard-tisanaria-react)
-> Business Intelligence para negócio real com relatórios gerados por IA.
-> `React` `Tailwind CSS` `Gemini API`
+> Business Intelligence para negócio real com recomendações geradas por IA.
+> `React` `Tailwind CSS` `Recharts` `Gemini API`
 
 #### [EcoConecta — Portal de Sustentabilidade](https://eco-conecta-sigma.vercel.app/)
 > Portal com foco em acessibilidade WCAG, HTML semântico e SEO.
@@ -75,10 +90,6 @@ Mais de **1.000h de formação** entre Oracle ONE + Alura e Bootcamp Santander D
 #### [Calculadora de Tempo de Tela](https://github.com/Thiago-spba/calculadora-tempo-tela)
 > Projeto de Extensão Universitária sobre saúde digital.
 > `HTML5` `CSS3` `JavaScript`
-
-#### [Jogo Geométrico Interativo](https://github.com/Thiago-spba/Jogo-Geom-trico)
-> Jogo web com gráficos gerados pela biblioteca p5.js.
-> `JavaScript` `p5.js` `HTML5 Canvas`
 
 ---
 
@@ -227,7 +238,8 @@ Mais de **1.000h de formação** entre Oracle ONE + Alura e Bootcamp Santander D
 | 📧 **E-mail** | thiagofernando_sp@yahoo.com.br |
 | 💼 **LinkedIn** | [linkedin.com/in/thiagospabc](https://www.linkedin.com/in/thiagospabc) |
 | 🌐 **Portfólio** | [portfolio-thiagosp.vercel.app](https://portfolio-thiagosp.vercel.app/) |
-| 🚀 **OLLO App** | [olloapp.com.br](https://olloapp.com.br) |
+| 🚀 **OLLO** | [olloapp.com.br](https://olloapp.com.br) |
+| 🎓 **EduPlay** | [eduplay.olloapp.com.br](https://eduplay.olloapp.com.br) |
 
 <div align="center">
 
