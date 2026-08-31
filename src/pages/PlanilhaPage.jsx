@@ -208,18 +208,114 @@ export default function PlanilhaPage({ turma }) {
     XLSX.writeFile(wb,turma.nome+"_"+bimestre+".xlsx"); setMenu(false)
   }
 
-  const handlePDF = async (e) => {
-    const file = e.target.files[0]; if (!file) return
-    setCarregando(true)
-    const base64 = await new Promise((res,rej) => { const r=new FileReader(); r.onload=()=>res(r.result.split(",")[1]); r.onerror=()=>rej(); r.readAsDataURL(file) })
-    try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_API_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:1000,messages:[{role:"user",content:[{type:"document",source:{type:"base64",media_type:"application/pdf",data:base64}},{type:"text",text:"Extraia apenas os nomes completos dos alunos. Retorne SOMENTE os nomes, um por linha, sem numeração."}]}]})})
-      const data = await resp.json()
-      const lista = (data.content?.find(b=>b.type==="text")?.text||"").split("\n").map(n=>n.trim()).filter(n=>n.length>3)
-      setNomesEditados(lista)
-    } catch(err) { alert("Erro: "+err.message) }
-    setCarregando(false)
-  }
+    const handleArquivo = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setCarregando(true);
+    const ext = file.name.split(".").pop().toLowerCase();
+
+    // 1. IMPORTAÇÃO DIRETA DE EXCEL / CSV (Rápido, local e sem falhas)
+    if (ext === "xlsx" || ext === "xls" || ext === "csv") {
+      try {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+        const nomesExtraidos = [];
+        for (const row of rows) {
+          if (!Array.isArray(row)) continue;
+          for (const cell of row) {
+            if (typeof cell === "string") {
+              const limpo = cell.trim();
+              const lower = limpo.toLowerCase();
+              if (["nome", "aluno", "estudante", "nome do aluno", "ra", "nº", "numero", "turma"].includes(lower)) continue;
+              if (limpo.length > 2 && /[a-zA-ZÀ-ÿ]/.test(limpo) && !/^d+$/.test(limpo)) {
+                nomesExtraidos.push(limpo);
+              }
+            }
+          }
+        }
+
+        const unicos = Array.from(new Set(nomesExtraidos));
+        if (unicos.length > 0) {
+          setNomesEditados(unicos);
+        } else {
+          alert("Nenhum nome de aluno foi encontrado na planilha. Verifique se o arquivo possui uma coluna com os nomes.");
+        }
+      } catch (err) {
+        alert("Erro ao ler arquivo Excel: " + err.message);
+      }
+      setCarregando(false);
+      return;
+    }
+
+    // 2. IMPORTAÇÃO DE PDF VIA IA (Claude 3.5 Haiku)
+    if (ext === "pdf") {
+      try {
+        const base64 = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(r.result.split(","));
+          r.onerror = () => rej(new Error("Falha ao ler o arquivo PDF."));
+          r.readAsDataURL(file);
+        });
+
+        const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
+        if (!apiKey) {
+          throw new Error("Chave da Anthropic (VITE_ANTHROPIC_API_KEY) não encontrada nas variáveis de ambiente.");
+        }
+
+        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true",
+          },
+          body: JSON.stringify({
+            model: "claude-3-5-haiku-20241022",
+            max_tokens: 2000,
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
+                  { type: "text", text: "Extraia apenas os nomes completos dos alunos. Retorne SOMENTE os nomes, um por linha, sem numeração e sem textos adicionais." },
+                ],
+              },
+            ],
+          }),
+        });
+
+        const data = await resp.json();
+        if (data.error) {
+          throw new Error(data.error.message || "Erro retornado pela API da Anthropic");
+        }
+
+        const texto = data.content?.find((b) => b.type === "text")?.text || "";
+        const lista = texto
+          .split("
+")
+          .map((n) => n.trim())
+          .filter((n) => n.length > 2);
+
+        if (lista.length > 0) {
+          setNomesEditados(lista);
+        } else {
+          alert("A IA não conseguiu identificar nomes no PDF fornecido.");
+        }
+      } catch (err) {
+        alert("Erro na extração do PDF: " + err.message);
+      }
+      setCarregando(false);
+      return;
+    }
+
+    alert("Formato não suportado. Por favor, envie um arquivo .pdf, .xlsx, .xls ou .csv.");
+    setCarregando(false);
+  };
 
   const confirmarImport = async () => {
     for (const n of nomesEditados.filter(n=>n.trim().length>2)) await addDoc(collection(db,"alunos"),{nome:n.trim(),turmaId:turma.id,obs:""})
@@ -242,7 +338,7 @@ export default function PlanilhaPage({ turma }) {
             <div style={{position:"absolute",top:"110%",left:0,background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:"10px",boxShadow:"0 4px 16px rgba(0,0,0,0.15)",zIndex:100,minWidth:"210px",overflow:"hidden"}}>
               <button style={btnMenu} onClick={exportarPDF}>📄 Exportar PDF</button>
               <button style={btnMenu} onClick={exportarExcel}>📊 Exportar Excel</button>
-              <button style={btnMenu} onClick={()=>{setImportando(true);setMenu(false)}}>📥 Importar Lista (PDF)</button>
+              <button style={btnMenu} onClick={()=>{setImportando(true);setMenu(false)}}>📥 Importar Lista (PDF / Excel)</button>
               <button style={{...btnMenu,borderBottom:"none"}} onClick={()=>{setEditandoEscola(true);setMenu(false)}}>🏫 {escola||"Definir Escola"}</button>
             </div>
           )}
@@ -267,8 +363,8 @@ export default function PlanilhaPage({ turma }) {
         <div style={overlay}>
           <div style={modal}>
             <h3 style={{fontWeight:"700",marginBottom:"0.5rem",color:"var(--text)"}}>📥 Importar Lista de Alunos</h3>
-            <p style={{fontSize:"0.85rem",color:"var(--text-muted)",marginBottom:"1rem"}}>Upload do PDF da Plataforma do Futuro. A IA extrai os nomes — você revisa e edita antes de confirmar.</p>
-            <input type="file" accept=".pdf" onChange={handlePDF} style={{width:"100%",marginBottom:"1rem",color:"var(--text)"}} />
+            <p style={{fontSize:"0.85rem",color:"var(--text-muted)",marginBottom:"1rem"}}>Envie o PDF da Plataforma do Futuro ou sua Planilha Excel (.xlsx, .xls, .csv). Os nomes serão extraídos para sua revisão.</p>
+            <input type="file" accept=".pdf,.xlsx,.xls,.csv" onChange={handleArquivo} style={{width:"100%",marginBottom:"1rem",color:"var(--text)"}} />
             {carregando && <p style={{color:"var(--accent)",fontWeight:"600",marginBottom:"1rem"}}>⏳ Extraindo nomes com IA...</p>}
             {nomesEditados.length>0 && (
               <div>
