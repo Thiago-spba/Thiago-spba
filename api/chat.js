@@ -1,17 +1,17 @@
-Ôªøexport default async function handler(req, res) {
+export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'M√©todo n√£o permitido' });
+    return res.status(405).json({ error: 'MÈtodo n„o permitido' });
   }
 
   const { message } = req.body;
 
   if (!message) {
-    return res.status(400).json({ error: 'Mensagem n√£o fornecida' });
+    return res.status(400).json({ error: 'Mensagem n„o fornecida' });
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("Falha Cr√≠tica: ANTHROPIC_API_KEY ausente nas vari√°veis de ambiente.");
-    return res.status(500).json({ error: 'Erro de configura√ß√£o no servidor.' });
+    console.error("Falha CrÌtica: ANTHROPIC_API_KEY ausente nas vari·veis de ambiente.");
+    return res.status(500).json({ error: 'Erro de configuraÁ„o no servidor.' });
   }
 
   try {
@@ -23,7 +23,7 @@
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-haiku-20241022', // Atualizado para a vers√£o 3.5 Haiku
+        model: 'claude-haiku-4-5-20251001', // Atualizado para a vers„o 3.5 Haiku
         max_tokens: 1024,
         messages: [{ role: 'user', content: message }]
       })
@@ -38,7 +38,7 @@
 
     res.status(200).json(data);
   } catch (error) {
-    console.error("Erro interno da fun√ß√£o Serverless:", error);
+    console.error("Erro interno da funÁ„o Serverless:", error);
     res.status(500).json({ error: 'Falha de rede ou erro interno no servidor.' });
   }
 }
