@@ -9,7 +9,7 @@
     return res.status(400).json({ error: 'Mensagem não fornecida' });
   }
 
-  // Validação Fail-fast: Verifica se a variável de ambiente foi carregada pela Vercel
+  // Validação Fail-fast
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error("Falha Crítica: ANTHROPIC_API_KEY ausente nas variáveis de ambiente.");
     return res.status(500).json({ error: 'Erro de configuração no servidor.' });
@@ -22,10 +22,9 @@
         'Content-Type': 'application/json',
         'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01'
-        // O cabeçalho 'anthropic-workspace-id' foi intencionalmente removido
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022', 
+        model: 'claude-3-haiku-20240307', // Modelo alterado para a versão Haiku (mais barata)
         max_tokens: 1024,
         messages: [{ role: 'user', content: message }]
       })
@@ -33,7 +32,6 @@
 
     const data = await response.json();
 
-    // Se a API da Anthropic retornar erro, repassamos o erro exato para facilitar o diagnóstico
     if (!response.ok) {
       console.error("Erro retornado pela Anthropic:", data);
       return res.status(response.status).json(data);
