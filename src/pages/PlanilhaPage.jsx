@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+﻿import { useState, useEffect } from "react"
 import { db } from "../firebase"
 import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, where, getDocs, setDoc, getDoc } from "firebase/firestore"
 import jsPDF from "jspdf"
@@ -110,7 +110,7 @@ export default function PlanilhaPage({ turma }) {
 
   const limparTurmaToda = async () => {
     if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os alunos, notas e relatórios desta turma. Tem certeza absoluta?")) return;
-    if (!confirm("🔄 Última chance: deseja realmente continuar? Esta ação é irreversível!")) return;
+    if (!confirm("🔴 Última chance: deseja realmente continuar? Esta ação é irreversível!")) return;
     setApagandoTodos(true);
     try {
       const qAlunos = query(collection(db, "alunos"), where("turmaId", "==", turma.id));
@@ -201,9 +201,9 @@ Agora, escreva o relatório.`
     }
 
     try {
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      const resp = await fetch("/api/chat", {
         method:"POST",
-        headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_API_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
           model:"claude-haiku-4-5-20251001",
           max_tokens:600,
@@ -369,18 +369,11 @@ Agora, escreva o relatório.`
           r.readAsDataURL(file);
         });
 
-        const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-        if (!apiKey) {
-          throw new Error('Chave da Anthropic (VITE_ANTHROPIC_API_KEY) não encontrada nas variáveis de ambiente.');
-        }
-
-        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        // A chave é gerenciada com segurança pelo servidor (api/chat.js)
+        const resp = await fetch('/api/chat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
           },
           body: JSON.stringify({
             model: 'claude-3-5-haiku-20241022',
