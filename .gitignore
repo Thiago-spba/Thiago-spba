@@ -28,3 +28,6 @@ dist-ssr
 *.py
 .vercel
 .env*
+.env
+.env.local
+.env.*.local
