@@ -35,6 +35,7 @@ function limparMarkdown(t) {
 }
 
 export default function PlanilhaPage({ turma }) {
+  // --- Todos os estados originais ---
   const [bimestre, setBimestre]             = useState("1 Bimestre")
   const [alunos, setAlunos]                 = useState([])
   const [notas, setNotas]                   = useState({})
@@ -54,6 +55,21 @@ export default function PlanilhaPage({ turma }) {
   const [escolaInput, setEscolaInput]       = useState("")
   const [editandoEscola, setEditandoEscola] = useState(false)
 
+  // --- Dark mode detection (sincronizado com a classe .dark no html) ---
+  const [darkMode, setDarkMode] = useState(false)
+
+  useEffect(() => {
+    const checkDark = () => {
+      const isDark = document.documentElement.classList.contains('dark')
+      setDarkMode(isDark)
+    }
+    checkDark()
+    const observer = new MutationObserver(checkDark)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
+
+  // --- Efeitos originais (carregar escola, alunos, notas) ---
   useEffect(() => {
     getDoc(doc(db,"config","professor")).then(d => {
       if (d.exists() && d.data().escola) { setEscola(d.data().escola); setEscolaInput(d.data().escola) }
@@ -78,6 +94,7 @@ export default function PlanilhaPage({ turma }) {
     })
   }, [turma.id, bimestre])
 
+  // --- Funções originais (todas mantidas) ---
   const getVal = (alunoId, campo) => {
     const k = alunoId+"_"+campo
     return local[k] !== undefined ? local[k] : (notas[alunoId]?.[campo] ?? "")
@@ -208,7 +225,7 @@ export default function PlanilhaPage({ turma }) {
     XLSX.writeFile(wb,turma.nome+"_"+bimestre+".xlsx"); setMenu(false)
   }
 
-      const handleArquivo = async (e) => {
+  const handleArquivo = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setCarregando(true);
@@ -252,7 +269,7 @@ export default function PlanilhaPage({ turma }) {
       try {
         const base64 = await new Promise((res, rej) => {
           const r = new FileReader();
-          r.onload = () => res(r.result.split(','));
+          r.onload = () => res(r.result.split(','))[1];
           r.onerror = () => rej(new Error('Falha ao ler o arquivo PDF.'));
           r.readAsDataURL(file);
         });
@@ -314,105 +331,436 @@ export default function PlanilhaPage({ turma }) {
     setNomesEditados([]); setImportando(false)
   }
 
-  const btnMenu = {width:"100%",padding:"0.75rem 1rem",textAlign:"left",background:"none",border:"none",cursor:"pointer",color:"var(--text)",fontSize:"0.9rem",borderBottom:"1px solid var(--border)"}
-  const overlay = {position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:"1rem"}
-  const modal   = {background:"var(--bg-card)",borderRadius:"16px",padding:"1.5rem",maxWidth:"520px",width:"100%",maxHeight:"88vh",overflowY:"auto"}
+  // --- Estilos dinâmicos para dark mode (inline) ---
+  const isDark = darkMode
+  const bgClass = isDark ? 'bg-dark' : 'bg-light'
+  const textClass = isDark ? 'text-light' : 'text-dark'
+
+  // Estilos inline para os componentes
+  const styles = {
+    container: {
+      paddingTop: '1rem',
+      color: isDark ? '#e0dcd6' : '#1a1a1a',
+      backgroundColor: isDark ? '#1a1a1a' : 'transparent'
+    },
+    accordionWrapper: {
+      marginBottom: '1rem'
+    },
+    accordionButton: (isOpen) => ({
+      width: '100%',
+      padding: '0.75rem 1rem',
+      background: isOpen ? (isDark ? '#3a3a3a' : '#e8e0d5') : (isDark ? '#2a2a2a' : '#f5efe8'),
+      color: isDark ? '#f0ece6' : '#1a1a1a',
+      border: isDark ? '1px solid #444' : '1px solid #d6c8b4',
+      borderRadius: isOpen ? '10px 10px 0 0' : '10px',
+      fontSize: '1rem',
+      fontWeight: '700',
+      cursor: 'pointer',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      fontFamily: "'Playfair Display', serif",
+      transition: '0.2s'
+    }),
+    accordionIcon: (isOpen) => ({
+      fontSize: '1.2rem',
+      transition: 'transform 0.3s',
+      transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+    }),
+    accordionContent: (isOpen) => ({
+      overflow: 'hidden',
+      maxHeight: isOpen ? '500px' : '0',
+      transition: 'max-height 0.3s ease',
+      background: isDark ? '#2a2a2a' : '#fcf8f2',
+      borderRadius: isOpen ? '0 0 10px 10px' : '10px',
+      border: isOpen ? (isDark ? '1px solid #444' : '1px solid #d6c8b4') : 'none',
+      borderTop: 'none',
+      padding: isOpen ? '0.8rem 1rem' : '0 1rem'
+    }),
+    card: {
+      background: isDark ? '#2a2a2a' : '#fcf8f2',
+      borderRadius: '12px',
+      padding: '0.8rem 0.5rem',
+      boxShadow: isDark ? '0 4px 14px rgba(0,0,0,0.5)' : '0 4px 14px rgba(0,0,0,0.08)',
+      border: isDark ? '1px solid #444' : '1px solid #d6c8b4',
+      overflowX: 'auto',
+      marginBottom: '1rem'
+    },
+    table: {
+      width: '100%',
+      borderCollapse: 'collapse',
+      fontFamily: "'Crimson Text', serif",
+      fontSize: '0.9rem',
+      minWidth: '650px'
+    },
+    th: {
+      background: isDark ? '#3a3a3a' : '#d9c9b0',
+      color: isDark ? '#f0ece6' : '#1a1a1a',
+      padding: '0.6rem 0.5rem',
+      textAlign: 'left',
+      fontFamily: "'Playfair Display', serif",
+      fontWeight: '700',
+      fontSize: '0.8rem',
+      textTransform: 'uppercase',
+      borderBottom: isDark ? '2px solid #555' : '2px solid #b8a68b'
+    },
+    td: {
+      padding: '0.5rem 0.4rem',
+      borderBottom: isDark ? '1px solid #3a3a3a' : '1px solid #e3d9cb',
+      color: isDark ? '#e0dcd6' : '#1a1a1a'
+    },
+    inputNota: {
+      width: '4.2rem',
+      textAlign: 'center',
+      fontFamily: "'Playfair Display', serif",
+      fontSize: '1rem',
+      fontWeight: '700',
+      padding: '0.2rem 0.2rem',
+      border: isDark ? '1px solid #555' : '1px solid #b8a68b',
+      borderRadius: '4px',
+      background: isDark ? '#333' : 'white',
+      color: isDark ? '#e0dcd6' : '#1a1a1a'
+    },
+    inputNome: {
+      flex: '1 1 180px',
+      padding: '0.7rem 0.9rem',
+      borderRadius: '8px',
+      border: isDark ? '1px solid #555' : '1px solid #b8a68b',
+      fontFamily: "'Crimson Text', serif",
+      fontSize: '1rem',
+      background: isDark ? '#333' : 'white',
+      color: isDark ? '#e0dcd6' : '#1a1a1a',
+      outline: 'none',
+      minWidth: '150px'
+    },
+    btnPrimary: {
+      padding: '0.7rem 1.5rem',
+      borderRadius: '8px',
+      border: 'none',
+      background: isDark ? '#5a4a3a' : '#4a3728',
+      color: 'white',
+      fontWeight: '700',
+      cursor: 'pointer',
+      fontFamily: "'Crimson Text', serif",
+      fontSize: '1rem',
+      whiteSpace: 'nowrap',
+      transition: '0.2s',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+    },
+    btnDanger: {
+      padding: '0.7rem 1.5rem',
+      borderRadius: '8px',
+      border: 'none',
+      background: isDark ? '#8b1a1a' : '#b22234',
+      color: 'white',
+      fontWeight: '700',
+      cursor: 'pointer',
+      fontFamily: "'Crimson Text', serif",
+      fontSize: '1rem',
+      transition: '0.2s',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.5rem',
+      justifyContent: 'center',
+      flex: '1 1 200px',
+      maxWidth: '320px',
+      boxShadow: '0 2px 4px rgba(0,0,0,0.15)'
+    },
+    btnDangerDisabled: {
+      opacity: 0.5,
+      cursor: 'not-allowed'
+    },
+    rowEven: {
+      background: isDark ? '#222' : '#f5efe8'
+    },
+    rowOdd: {
+      background: isDark ? 'transparent' : 'transparent'
+    },
+    emptyRow: {
+      padding: '1.8rem',
+      textAlign: 'center',
+      color: isDark ? '#aaa' : '#3e2e1f',
+      fontStyle: 'italic',
+      fontSize: '1rem'
+    },
+    deleteIcon: {
+      color: isDark ? '#cc4444' : '#b22234',
+      background: 'none',
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: '1.2rem',
+      padding: '0.2rem 0.5rem'
+    },
+    actionRow: {
+      marginTop: '0.8rem',
+      display: 'flex',
+      gap: '0.6rem',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      justifyContent: 'flex-start'
+    },
+    actionGroup: {
+      display: 'flex',
+      gap: '0.6rem',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      width: '100%'
+    },
+    fileInput: {
+      display: 'none'
+    },
+    fileInputLabel: {
+      padding: '0.7rem 1.5rem',
+      borderRadius: '8px',
+      border: isDark ? '1px solid #555' : '1px solid #b8a68b',
+      background: isDark ? '#333' : '#fcf8f2',
+      color: isDark ? '#e0dcd6' : '#1a1a1a',
+      cursor: 'pointer',
+      fontFamily: "'Crimson Text', serif",
+      fontSize: '1rem',
+      transition: '0.2s',
+      display: 'inline-block'
+    },
+    inputConfig: {
+      width: '100%',
+      maxWidth: '300px',
+      padding: '0.7rem 0.9rem',
+      borderRadius: '8px',
+      border: isDark ? '1px solid #555' : '1px solid #b8a68b',
+      fontFamily: "'Crimson Text', serif",
+      fontSize: '1rem',
+      background: isDark ? '#333' : 'white',
+      color: isDark ? '#e0dcd6' : '#1a1a1a',
+      outline: 'none'
+    },
+    overlay: {
+      position: 'fixed',
+      inset: 0,
+      background: 'rgba(0,0,0,0.55)',
+      zIndex: 200,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '1rem'
+    },
+    modal: {
+      background: isDark ? '#2a2a2a' : '#fcf8f2',
+      borderRadius: '16px',
+      padding: '1.5rem',
+      maxWidth: '520px',
+      width: '100%',
+      maxHeight: '88vh',
+      overflowY: 'auto',
+      color: isDark ? '#e0dcd6' : '#1a1a1a'
+    },
+    menuDropdown: {
+      position: 'absolute',
+      top: '110%',
+      left: 0,
+      background: isDark ? '#2a2a2a' : '#fcf8f2',
+      border: isDark ? '1px solid #444' : '1px solid #d6c8b4',
+      borderRadius: '10px',
+      boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+      zIndex: 100,
+      minWidth: '210px',
+      overflow: 'hidden'
+    }
+  }
+
+  // --- Estado do accordion principal ---
+  const [accordionOpen, setAccordionOpen] = useState(true)
 
   return (
-    <div style={{paddingTop:"1rem"}}>
-      <div style={{display:"flex",gap:"0.5rem",alignItems:"center",marginBottom:"1rem",flexWrap:"wrap",width:"100%"}}>
-        <select value={bimestre} onChange={e=>setBimestre(e.target.value)} className="input-modern" style={{flex:"1",minWidth:"120px",maxWidth:"200px",fontWeight:"600",cursor:"pointer"}}>
-          {BIMESTRES.map(b=><option key={b} value={b}>{b}</option>)}
-        </select>
-        <div style={{position:"relative"}}>
-          <button className="btn-primary" onClick={()=>setMenu(!menu)} style={{display:"flex",alignItems:"center",gap:"0.5rem"}}>☰ Ações</button>
+    <div style={styles.container}>
+      {/* Accordion para selecionar bimestre */}
+      <div style={styles.accordionWrapper}>
+        <button 
+          style={styles.accordionButton(accordionOpen)} 
+          onClick={() => setAccordionOpen(!accordionOpen)}
+        >
+          <span>📚 {bimestre}</span>
+          <span style={styles.accordionIcon(accordionOpen)}>▼</span>
+        </button>
+        <div style={styles.accordionContent(accordionOpen)}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', padding: '0.3rem 0' }}>
+            {BIMESTRES.map(b => (
+              <button
+                key={b}
+                onClick={() => { setBimestre(b); setAccordionOpen(false) }}
+                style={{
+                  padding: '0.6rem 1rem',
+                  background: b === bimestre ? (isDark ? '#5a4a3a' : '#4a3728') : 'transparent',
+                  color: b === bimestre ? (isDark ? '#f0ece6' : '#fcf8f2') : (isDark ? '#ccc' : '#1a1a1a'),
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  fontFamily: "'Crimson Text', serif",
+                  fontSize: '0.95rem',
+                  fontWeight: b === bimestre ? '700' : '400',
+                  transition: '0.15s'
+                }}
+              >
+                {b}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Menu Ações (dropdown) */}
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+        <div style={{ position: 'relative' }}>
+          <button 
+            className="btn-primary" 
+            onClick={() => setMenu(!menu)} 
+            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+          >
+            ☰ Ações
+          </button>
           {menu && (
-            <div style={{position:"absolute",top:"110%",left:0,background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:"10px",boxShadow:"0 4px 16px rgba(0,0,0,0.15)",zIndex:100,minWidth:"210px",overflow:"hidden"}}>
-              <button style={btnMenu} onClick={exportarPDF}>📄 Exportar PDF</button>
-              <button style={btnMenu} onClick={exportarExcel}>📊 Exportar Excel</button>
-              <button style={btnMenu} onClick={()=>{setImportando(true);setMenu(false)}}>📥 Importar Lista (PDF / Excel)</button>
-              <button style={{...btnMenu,borderBottom:"none"}} onClick={()=>{setEditandoEscola(true);setMenu(false)}}>🏫 {escola||"Definir Escola"}</button>
+            <div style={styles.menuDropdown}>
+              <button 
+                style={{ width: '100%', padding: '0.75rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: isDark ? '#e0dcd6' : '#1a1a1a', fontSize: '0.9rem', borderBottom: isDark ? '1px solid #444' : '1px solid #d6c8b4' }}
+                onClick={() => { exportarPDF(); setMenu(false) }}
+              >
+                📄 Exportar PDF
+              </button>
+              <button 
+                style={{ width: '100%', padding: '0.75rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: isDark ? '#e0dcd6' : '#1a1a1a', fontSize: '0.9rem', borderBottom: isDark ? '1px solid #444' : '1px solid #d6c8b4' }}
+                onClick={() => { exportarExcel(); setMenu(false) }}
+              >
+                📊 Exportar Excel
+              </button>
+              <button 
+                style={{ width: '100%', padding: '0.75rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: isDark ? '#e0dcd6' : '#1a1a1a', fontSize: '0.9rem', borderBottom: isDark ? '1px solid #444' : '1px solid #d6c8b4' }}
+                onClick={() => { setImportando(true); setMenu(false) }}
+              >
+                📥 Importar Lista (PDF / Excel)
+              </button>
+              <button 
+                style={{ width: '100%', padding: '0.75rem 1rem', textAlign: 'left', background: 'none', border: 'none', cursor: 'pointer', color: isDark ? '#e0dcd6' : '#1a1a1a', fontSize: '0.9rem' }}
+                onClick={() => { setEditandoEscola(true); setMenu(false) }}
+              >
+                🏫 {escola || 'Definir Escola'}
+              </button>
             </div>
           )}
         </div>
       </div>
 
+      {/* Modais (Editando Escola, Importando, Relatório) - mantidos exatamente iguais, apenas ajustando cores */}
+
       {editandoEscola && (
-        <div style={overlay}>
-          <div style={{...modal,maxWidth:"400px"}}>
-            <h3 style={{fontWeight:"700",marginBottom:"1rem",color:"var(--text)"}}>🏫 Nome da Escola</h3>
-            <input className="input-modern" value={escolaInput} onChange={e=>setEscolaInput(e.target.value)} placeholder="Ex: E.E. Prof. Simão Mathias" onKeyDown={e=>e.key==="Enter"&&salvarEscola()} style={{marginBottom:"0.75rem"}} />
-            <p style={{fontSize:"0.8rem",color:"var(--text-muted)",marginBottom:"1rem"}}>Salvo uma vez, aparece em todas as Avaliações Descritivas.</p>
-            <div style={{display:"flex",gap:"0.5rem"}}>
-              <button className="btn-primary" onClick={salvarEscola} style={{flex:1}}>Salvar</button>
-              <button className="btn-ghost" onClick={()=>setEditandoEscola(false)} style={{flex:1}}>Cancelar</button>
+        <div style={styles.overlay}>
+          <div style={styles.modal}>
+            <h3 style={{ fontWeight: '700', marginBottom: '1rem', color: isDark ? '#f0ece6' : '#1a1a1a' }}>🏫 Nome da Escola</h3>
+            <input 
+              className="input-modern" 
+              value={escolaInput} 
+              onChange={e => setEscolaInput(e.target.value)} 
+              placeholder="Ex: E.E. Prof. Simão Mathias" 
+              onKeyDown={e => e.key === 'Enter' && salvarEscola()} 
+              style={{ width: '100%', marginBottom: '0.75rem', padding: '0.6rem', borderRadius: '8px', border: isDark ? '1px solid #555' : '1px solid #b8a68b', background: isDark ? '#333' : 'white', color: isDark ? '#e0dcd6' : '#1a1a1a' }} 
+            />
+            <p style={{ fontSize: '0.8rem', color: isDark ? '#aaa' : '#6b5a4a', marginBottom: '1rem' }}>Salvo uma vez, aparece em todas as Avaliações Descritivas.</p>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button className="btn-primary" onClick={salvarEscola} style={{ flex: 1 }}>Salvar</button>
+              <button className="btn-ghost" onClick={() => setEditandoEscola(false)} style={{ flex: 1, background: 'none', border: '1px solid #b8a68b', borderRadius: '8px', padding: '0.6rem', cursor: 'pointer', color: isDark ? '#e0dcd6' : '#1a1a1a' }}>Cancelar</button>
             </div>
           </div>
         </div>
       )}
 
       {importando && (
-        <div style={overlay}>
-          <div style={modal}>
-            <h3 style={{fontWeight:"700",marginBottom:"0.5rem",color:"var(--text)"}}>📥 Importar Lista de Alunos</h3>
-            <p style={{fontSize:"0.85rem",color:"var(--text-muted)",marginBottom:"1rem"}}>Envie o PDF da Plataforma do Futuro ou sua Planilha Excel (.xlsx, .xls, .csv). Os nomes serão extraídos para sua revisão.</p>
-            <input type="file" accept=".pdf,.xlsx,.xls,.csv" onChange={handleArquivo} style={{width:"100%",marginBottom:"1rem",color:"var(--text)"}} />
-            {carregando && <p style={{color:"var(--accent)",fontWeight:"600",marginBottom:"1rem"}}>⏳ Extraindo nomes com IA...</p>}
-            {nomesEditados.length>0 && (
+        <div style={styles.overlay}>
+          <div style={styles.modal}>
+            <h3 style={{ fontWeight: '700', marginBottom: '0.5rem', color: isDark ? '#f0ece6' : '#1a1a1a' }}>📥 Importar Lista de Alunos</h3>
+            <p style={{ fontSize: '0.85rem', color: isDark ? '#aaa' : '#6b5a4a', marginBottom: '1rem' }}>Envie o PDF da Plataforma do Futuro ou sua Planilha Excel (.xlsx, .xls, .csv). Os nomes serão extraídos para sua revisão.</p>
+            <input type="file" accept=".pdf,.xlsx,.xls,.csv" onChange={handleArquivo} style={{ width: '100%', marginBottom: '1rem', color: isDark ? '#e0dcd6' : '#1a1a1a' }} />
+            {carregando && <p style={{ color: '#e8792e', fontWeight: '600', marginBottom: '1rem' }}>⏳ Extraindo nomes com IA...</p>}
+            {nomesEditados.length > 0 && (
               <div>
-                <p style={{fontWeight:"600",marginBottom:"0.5rem",color:"var(--text)"}}>{nomesEditados.length} alunos encontrados — edite se necessário:</p>
-                <div style={{maxHeight:"200px",overflowY:"auto",border:"1px solid var(--border)",borderRadius:"8px",padding:"0.5rem",marginBottom:"1rem",display:"flex",flexDirection:"column",gap:"0.35rem"}}>
-                  {nomesEditados.map((n,i)=>(
-                    <div key={i} style={{display:"flex",gap:"0.4rem",alignItems:"center"}}>
-                      <span style={{color:"var(--text-muted)",fontSize:"0.75rem",minWidth:"1.5rem"}}>{String(i+1).padStart(2,"0")}.</span>
-                      <input value={n} onChange={e=>{const arr=[...nomesEditados];arr[i]=e.target.value;setNomesEditados(arr)}} style={{flex:1,fontSize:"0.9rem",padding:"0.2rem 0.5rem",border:"1px solid var(--border)",borderRadius:"6px",background:"var(--bg)",color:"var(--text)"}} />
-                      <button onClick={()=>setNomesEditados(prev=>prev.filter((_,j)=>j!==i))} style={{color:"#DC2626",background:"none",border:"none",cursor:"pointer"}}>✕</button>
+                <p style={{ fontWeight: '600', marginBottom: '0.5rem', color: isDark ? '#f0ece6' : '#1a1a1a' }}>{nomesEditados.length} alunos encontrados — edite se necessário:</p>
+                <div style={{ maxHeight: '200px', overflowY: 'auto', border: isDark ? '1px solid #444' : '1px solid #d6c8b4', borderRadius: '8px', padding: '0.5rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  {nomesEditados.map((n, i) => (
+                    <div key={i} style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      <span style={{ color: isDark ? '#aaa' : '#6b5a4a', fontSize: '0.75rem', minWidth: '1.5rem' }}>{String(i+1).padStart(2, '0')}.</span>
+                      <input 
+                        value={n} 
+                        onChange={e => { const arr = [...nomesEditados]; arr[i] = e.target.value; setNomesEditados(arr) }} 
+                        style={{ flex: 1, fontSize: '0.9rem', padding: '0.2rem 0.5rem', border: isDark ? '1px solid #555' : '1px solid #b8a68b', borderRadius: '6px', background: isDark ? '#333' : 'white', color: isDark ? '#e0dcd6' : '#1a1a1a' }} 
+                      />
+                      <button onClick={() => setNomesEditados(prev => prev.filter((_, j) => j !== i))} style={{ color: '#DC2626', background: 'none', border: 'none', cursor: 'pointer' }}>✕</button>
                     </div>
                   ))}
                 </div>
-                <button className="btn-primary" onClick={confirmarImport} style={{width:"100%",marginBottom:"0.5rem"}}>✓ Confirmar e Importar {nomesEditados.filter(n=>n.trim().length>2).length} alunos</button>
+                <button className="btn-primary" onClick={confirmarImport} style={{ width: '100%', marginBottom: '0.5rem' }}>✓ Confirmar e Importar {nomesEditados.filter(n => n.trim().length > 2).length} alunos</button>
               </div>
             )}
-            <button className="btn-ghost" onClick={()=>{setImportando(false);setNomesEditados([])}} style={{width:"100%"}}>Cancelar</button>
+            <button className="btn-ghost" onClick={() => { setImportando(false); setNomesEditados([]) }} style={{ width: '100%', background: 'none', border: '1px solid #b8a68b', borderRadius: '8px', padding: '0.6rem', cursor: 'pointer', color: isDark ? '#e0dcd6' : '#1a1a1a' }}>Cancelar</button>
           </div>
         </div>
       )}
 
       {modalAluno && (
-        <div style={overlay}>
-          <div style={modal}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1rem"}}>
+        <div style={styles.overlay}>
+          <div style={styles.modal}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
               <div>
-                <h3 style={{fontWeight:"700",color:"var(--text)"}}>Avaliação Descritiva</h3>
-                <p style={{fontSize:"0.8rem",color:"var(--text-muted)"}}>{modalAluno.nome} | {turma.nome} | {bimestre}</p>
+                <h3 style={{ fontWeight: '700', color: isDark ? '#f0ece6' : '#1a1a1a' }}>Avaliação Descritiva</h3>
+                <p style={{ fontSize: '0.8rem', color: isDark ? '#aaa' : '#6b5a4a' }}>{modalAluno.nome} | {turma.nome} | {bimestre}</p>
               </div>
-              <button onClick={()=>{setModalAluno(null);setRelTexto("")}} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:"1.2rem"}}>✕</button>
+              <button onClick={() => { setModalAluno(null); setRelTexto('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: isDark ? '#aaa' : '#6b5a4a', fontSize: '1.2rem' }}>✕</button>
             </div>
             {!relExiste && (
-              <div style={{marginBottom:"1rem"}}>
-                <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>
-                  <button onClick={()=>setRelTipo("descritiva")} className={relTipo==="descritiva"?"btn-primary":"btn-ghost"} style={{flex:1,fontSize:"0.85rem"}}>📝 Padrão</button>
-                  <button onClick={()=>setRelTipo("indisciplina")} style={{flex:1,fontSize:"0.85rem",border:"none",borderRadius:"8px",padding:"0.6rem",cursor:"pointer",fontWeight:"600",background:relTipo==="indisciplina"?"#DC2626":"transparent",color:relTipo==="indisciplina"?"white":"#DC2626",border:relTipo==="indisciplina"?"none":"1px solid #DC2626"}}>⚠️ Indisciplina</button>
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                  <button onClick={() => setRelTipo('descritiva')} className={relTipo === 'descritiva' ? 'btn-primary' : 'btn-ghost'} style={{ flex: 1, fontSize: '0.85rem', ...(relTipo === 'descritiva' ? {} : { background: 'none', border: '1px solid #b8a68b', borderRadius: '8px', padding: '0.6rem', cursor: 'pointer', color: isDark ? '#e0dcd6' : '#1a1a1a' }) }}>📝 Padrão</button>
+                  <button 
+                    onClick={() => setRelTipo('indisciplina')} 
+                    style={{ 
+                      flex: 1, 
+                      fontSize: '0.85rem', 
+                      border: 'none', 
+                      borderRadius: '8px', 
+                      padding: '0.6rem', 
+                      cursor: 'pointer', 
+                      fontWeight: '600',
+                      background: relTipo === 'indisciplina' ? '#DC2626' : 'transparent',
+                      color: relTipo === 'indisciplina' ? 'white' : '#DC2626',
+                      border: relTipo === 'indisciplina' ? 'none' : '1px solid #DC2626'
+                    }}
+                  >
+                    ⚠️ Indisciplina
+                  </button>
                 </div>
-                <label style={{fontSize:"0.85rem",fontWeight:"600",color:"var(--text)",display:"block",marginBottom:"0.4rem"}}>Palavras-chave:</label>
-                <textarea value={palavrasChave} onChange={e=>setPalavrasChave(e.target.value)}
-                  placeholder={relTipo==="indisciplina"?"Ex: saída de sala, desrespeito, agressão verbal":"Ex: dedicado, participativo, atento"}
-                  style={{width:"100%",minHeight:"70px",padding:"0.6rem",border:"1px solid var(--border)",borderRadius:"8px",fontSize:"0.9rem",background:"var(--bg)",color:"var(--text)",resize:"vertical"}} />
-                <button className="btn-primary" onClick={gerarRelatorio} disabled={gerando}
-                  style={{width:"100%",marginTop:"0.75rem",background:relTipo==="indisciplina"?"#DC2626":undefined}}>
-                  {gerando?"⏳ Gerando...":"Gerar Avaliação Descritiva"}
+                <label style={{ fontSize: '0.85rem', fontWeight: '600', color: isDark ? '#f0ece6' : '#1a1a1a', display: 'block', marginBottom: '0.4rem' }}>Palavras-chave:</label>
+                <textarea 
+                  value={palavrasChave} 
+                  onChange={e => setPalavrasChave(e.target.value)}
+                  placeholder={relTipo === 'indisciplina' ? 'Ex: saída de sala, desrespeito, agressão verbal' : 'Ex: dedicado, participativo, atento'}
+                  style={{ width: '100%', minHeight: '70px', padding: '0.6rem', border: isDark ? '1px solid #555' : '1px solid #b8a68b', borderRadius: '8px', fontSize: '0.9rem', background: isDark ? '#333' : 'white', color: isDark ? '#e0dcd6' : '#1a1a1a', resize: 'vertical' }} 
+                />
+                <button 
+                  className="btn-primary" 
+                  onClick={gerarRelatorio} 
+                  disabled={gerando}
+                  style={{ width: '100%', marginTop: '0.75rem', background: relTipo === 'indisciplina' ? '#DC2626' : undefined }}
+                >
+                  {gerando ? '⏳ Gerando...' : 'Gerar Avaliação Descritiva'}
                 </button>
               </div>
             )}
             {relTexto && (
               <div>
-                {relExiste && <p style={{fontSize:"0.75rem",color:"#16A34A",fontWeight:"600",marginBottom:"0.75rem"}}>✓ Salvo no banco — não será repetido neste bimestre</p>}
-                <div style={{background:"var(--bg)",border:"1px solid var(--border)",borderRadius:"8px",padding:"1rem",marginBottom:"1rem",fontSize:"0.9rem",color:"var(--text)",lineHeight:"1.8",whiteSpace:"pre-wrap"}}>{relTexto}</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem"}}>
-                  <button className="btn-primary" onClick={exportarRelatorioPDF} style={{fontSize:"0.8rem"}}>📄 Baixar PDF</button>
-                  <button className="btn-ghost" onClick={copiarTexto} style={{fontSize:"0.8rem"}}>📋 Copiar Texto</button>
-                  <button onClick={whatsappTexto} style={{background:"#25D366",color:"white",border:"none",borderRadius:"8px",padding:"0.6rem",cursor:"pointer",fontSize:"0.8rem",fontWeight:"600"}}>💬 WhatsApp Texto</button>
-                  <button onClick={whatsappPDF} style={{background:"#128C7E",color:"white",border:"none",borderRadius:"8px",padding:"0.6rem",cursor:"pointer",fontSize:"0.8rem",fontWeight:"600"}}>📱 WhatsApp + PDF</button>
+                {relExiste && <p style={{ fontSize: '0.75rem', color: '#16A34A', fontWeight: '600', marginBottom: '0.75rem' }}>✓ Salvo no banco — não será repetido neste bimestre</p>}
+                <div style={{ background: isDark ? '#1a1a1a' : '#f5efe8', border: isDark ? '1px solid #444' : '1px solid #d6c8b4', borderRadius: '8px', padding: '1rem', marginBottom: '1rem', fontSize: '0.9rem', color: isDark ? '#e0dcd6' : '#1a1a1a', lineHeight: '1.8', whiteSpace: 'pre-wrap' }}>{relTexto}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <button className="btn-primary" onClick={exportarRelatorioPDF} style={{ fontSize: '0.8rem' }}>📄 Baixar PDF</button>
+                  <button className="btn-ghost" onClick={copiarTexto} style={{ fontSize: '0.8rem', background: 'none', border: '1px solid #b8a68b', borderRadius: '8px', padding: '0.6rem', cursor: 'pointer', color: isDark ? '#e0dcd6' : '#1a1a1a' }}>📋 Copiar Texto</button>
+                  <button onClick={whatsappTexto} style={{ background: '#25D366', color: 'white', border: 'none', borderRadius: '8px', padding: '0.6rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>💬 WhatsApp Texto</button>
+                  <button onClick={whatsappPDF} style={{ background: '#128C7E', color: 'white', border: 'none', borderRadius: '8px', padding: '0.6rem', cursor: 'pointer', fontSize: '0.8rem', fontWeight: '600' }}>📱 WhatsApp + PDF</button>
                 </div>
               </div>
             )}
@@ -420,38 +768,93 @@ export default function PlanilhaPage({ turma }) {
         </div>
       )}
 
-      <div className="card" style={{overflowX:"auto",marginBottom:"1rem"}}>
-        <table style={{width:"100%",borderCollapse:"collapse",fontSize:"0.9rem"}}>
+      {/* Tabela de alunos e notas */}
+      <div style={styles.card}>
+        <table style={styles.table}>
           <thead>
-            <tr style={{borderBottom:"2px solid var(--border)"}}>
-              <th style={{padding:"0.75rem 0.5rem",textAlign:"left",color:"var(--text-muted)",fontWeight:"600",fontSize:"0.75rem",textTransform:"uppercase"}}>#</th>
-              <th style={{padding:"0.75rem 0.5rem",textAlign:"left",color:"var(--text-muted)",fontWeight:"600",fontSize:"0.75rem",textTransform:"uppercase",minWidth:"10rem"}}>Aluno</th>
-              {LABELS.map(l=><th key={l} style={{padding:"0.75rem 0.5rem",textAlign:"center",color:"var(--text-muted)",fontWeight:"600",fontSize:"0.75rem",textTransform:"uppercase",minWidth:"5.5rem"}}>{l}</th>)}
-              <th style={{padding:"0.75rem 0.5rem",textAlign:"left",color:"var(--text-muted)",fontWeight:"600",fontSize:"0.75rem",textTransform:"uppercase",minWidth:"8rem"}}>Observação</th>
-              <th style={{padding:"0.75rem 0.5rem",width:"5rem"}}></th>
+            <tr>
+              <th style={styles.th}>#</th>
+              <th style={{ ...styles.th, textAlign: 'left' }}>Aluno</th>
+              {LABELS.map(l => <th key={l} style={{ ...styles.th, textAlign: 'center' }}>{l}</th>)}
+              <th style={{ ...styles.th, textAlign: 'left' }}>Observação</th>
+              <th style={{ ...styles.th, textAlign: 'center', width: '5rem' }}></th>
             </tr>
           </thead>
           <tbody>
-            {alunos.length===0 && <tr><td colSpan="8" style={{padding:"2rem",textAlign:"center",color:"var(--text-muted)",fontStyle:"italic"}}>Nenhum aluno registrado</td></tr>}
-            {alunos.map((a,i)=>(
-              <tr key={a.id} style={{borderBottom:"1px solid var(--border)"}}>
-                <td style={{padding:"0.5rem",color:"var(--text-muted)",fontSize:"0.8rem",textAlign:"center"}}>{String(i+1).padStart(2,"00")}</td>
-                <td style={{padding:"0.5rem",color:"var(--text)",fontWeight:"500"}}>{a.nome}</td>
-                {CRITERIOS.map(c=>{const val=getVal(a.id,c);return <td key={c} style={{padding:"0.3rem",textAlign:"center"}}><input type="number" min="0" max="10" step="0.5" value={val} onChange={e=>onChange(a.id,c,e.target.value)} onBlur={e=>onBlur(a.id,c,e.target.value)} className={"nota-input "+corNota(val)} /></td>})}
-                <td style={{padding:"0.3rem"}}><input type="text" defaultValue={a.obs||""} onBlur={e=>onBlur(a.id,"obs",e.target.value)} placeholder="Ex: transferido..." className="obs-input" /></td>
-                <td style={{padding:"0.3rem",textAlign:"center",whiteSpace:"nowrap"}}>
-                  <button onClick={()=>abrirRelatorio(a)} title="Avaliação Descritiva" style={{background:"none",border:"none",cursor:"pointer",fontSize:"1rem",marginRight:"0.25rem"}}>📝</button>
-                  <button onClick={()=>delAluno(a.id)} style={{color:"var(--text-muted)",background:"none",border:"none",cursor:"pointer",fontSize:"1rem"}}>✕</button>
-                </td>
-              </tr>
-            ))}
+            {alunos.length === 0 && (
+              <tr><td colSpan="8" style={styles.emptyRow}>Nenhum aluno registrado</td></tr>
+            )}
+            {alunos.map((a, i) => {
+              const rowStyle = i % 2 === 0 ? styles.rowEven : styles.rowOdd
+              return (
+                <tr key={a.id} style={{ ...rowStyle, borderBottom: isDark ? '1px solid #3a3a3a' : '1px solid #e3d9cb' }}>
+                  <td style={{ ...styles.td, textAlign: 'center', color: isDark ? '#aaa' : '#6b5a4a', fontSize: '0.8rem' }}>
+                    {String(i+1).padStart(2, '00')}
+                  </td>
+                  <td style={{ ...styles.td, fontWeight: '500' }}>{a.nome}</td>
+                  {CRITERIOS.map(c => {
+                    const val = getVal(a.id, c)
+                    return (
+                      <td key={c} style={{ ...styles.td, textAlign: 'center' }}>
+                        <input 
+                          type="number" 
+                          min="0" 
+                          max="10" 
+                          step="0.5" 
+                          value={val} 
+                          onChange={e => onChange(a.id, c, e.target.value)} 
+                          onBlur={e => onBlur(a.id, c, e.target.value)} 
+                          className={`nota-input ${corNota(val)}`} 
+                          style={styles.inputNota} 
+                        />
+                      </td>
+                    )
+                  })}
+                  <td style={styles.td}>
+                    <input 
+                      type="text" 
+                      defaultValue={a.obs || ''} 
+                      onBlur={e => onBlur(a.id, 'obs', e.target.value)} 
+                      placeholder="Ex: transferido..." 
+                      className="obs-input" 
+                      style={{ width: '100%', padding: '0.3rem', border: isDark ? '1px solid #555' : '1px solid #b8a68b', borderRadius: '4px', background: isDark ? '#333' : 'white', color: isDark ? '#e0dcd6' : '#1a1a1a' }} 
+                    />
+                  </td>
+                  <td style={{ ...styles.td, textAlign: 'center', whiteSpace: 'nowrap' }}>
+                    <button 
+                      onClick={() => abrirRelatorio(a)} 
+                      title="Avaliação Descritiva" 
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem', marginRight: '0.25rem', color: isDark ? '#e0dcd6' : '#1a1a1a' }}
+                    >
+                      📝
+                    </button>
+                    <button 
+                      onClick={() => delAluno(a.id)} 
+                      style={{ color: isDark ? '#cc4444' : '#b22234', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+                    >
+                      ✕
+                    </button>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>
 
-      <div style={{display:"flex",gap:"0.5rem"}}>
-        <input className="input-modern" value={nome} onChange={e=>setNome(e.target.value)} onKeyDown={e=>e.key==="Enter"&&addAluno()} placeholder="Nome do aluno — Enter para registrar" />
-        <button className="btn-primary" onClick={addAluno} style={{whiteSpace:"nowrap",minWidth:"7rem"}}>+ Registrar</button>
+      {/* Adicionar aluno */}
+      <div style={styles.actionRow}>
+        <input 
+          className="input-modern" 
+          value={nome} 
+          onChange={e => setNome(e.target.value)} 
+          onKeyDown={e => e.key === 'Enter' && addAluno()} 
+          placeholder="Nome do aluno — Enter para registrar" 
+          style={styles.inputNome} 
+        />
+        <button className="btn-primary" onClick={addAluno} style={{ ...styles.btnPrimary, whiteSpace: 'nowrap', minWidth: '7rem' }}>
+          + Registrar
+        </button>
       </div>
     </div>
   )
