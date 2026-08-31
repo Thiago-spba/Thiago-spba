@@ -1,0 +1,16 @@
+﻿{
+  "name": "Diario do Professor",
+  "short_name": "Diario Prof",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F2DEB3",
+  "theme_color": "#3D1A0A",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
