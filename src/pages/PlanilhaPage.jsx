@@ -143,19 +143,14 @@ export default function PlanilhaPage({ turma }) {
     if (!snap.empty) { setRelTexto(snap.docs[0].data().texto); setRelExiste(true) }
   }
 
-  // 🔥 FUNÇÃO GERAR RELATÓRIO REFATORADA – usando palavras-chave como base
   const gerarRelatorio = async () => {
     setGerando(true)
-
-    // Buscar notas do bimestre atual
     const notasAtuais = notas[modalAluno.id] || {}
     const temNotasAtuais = notasAtuais.atividades !== "" || notasAtuais.participacao !== "" || notasAtuais.comportamento !== ""
 
-    // Buscar notas de bimestres anteriores (apenas para contexto, se existirem)
     const todasNotas = {}
     for (const b of BIMESTRES) {
       if (b === bimestre) {
-        // já temos notasAtuais
         if (temNotasAtuais) todasNotas[b] = notasAtuais
       } else {
         const snap = await getDocs(query(collection(db,"notas"), where("alunoId","==",modalAluno.id), where("trimestre","==",b)))
@@ -173,7 +168,6 @@ export default function PlanilhaPage({ turma }) {
       b+": Atividades="+(n.atividades||"-")+", Participação="+(n.participacao||"-")+", Comportamento="+(n.comportamento||"-")
     ).join(" | ")
 
-    // Construção do prompt – FORÇANDO o uso das palavras-chave
     const palavras = palavrasChave.trim() || "Nenhuma palavra-chave fornecida"
     const obs = modalAluno.obs || "nenhuma"
 
@@ -201,19 +195,21 @@ Agora, escreva o relatório.`
     }
 
     try {
+      // CORREÇÃO APLICADA AQUI: Enviando os dados encapsulados em "message"
       const resp = await fetch("/api/chat", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          model:"claude-haiku-4-5-20251001",
-          max_tokens:600,
-          messages:[{role:"user",content:prompt}]
-        })
+        body: JSON.stringify({ message: prompt }) 
       })
       const json = await resp.json()
+      
+      if (!resp.ok) {
+        throw new Error(json.error?.message || json.error || 'Erro interno da API');
+      }
+
       const textoRaw = json.content?.find(b=>b.type==="text")?.text || "Erro ao gerar."
       const texto = limparMarkdown(textoRaw)
-      // Salva no banco
+      
       await addDoc(collection(db,"relatorios"), {
         alunoId:modalAluno.id,
         alunoNome:modalAluno.nome,
@@ -280,7 +276,6 @@ Agora, escreva o relatório.`
     XLSX.writeFile(wb,turma.nome+"_"+bimestre+".xlsx"); setMenu(false)
   }
 
-  // Extrair nomes do Excel
   const extrairNomesExcel = (rows) => {
     let headerRowIndex = -1;
     let nomeColIndex = -1;
@@ -369,30 +364,21 @@ Agora, escreva o relatório.`
           r.readAsDataURL(file);
         });
 
-        // A chave é gerenciada com segurança pelo servidor (api/chat.js)
+        // CORREÇÃO APLICADA AQUI TAMBÉM: Usando a propriedade "message" para conversar com o backend
         const resp = await fetch('/api/chat', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'claude-3-5-haiku-20241022',
-            max_tokens: 2000,
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-                  { type: 'text', text: 'Extraia apenas os nomes completos dos alunos. Retorne SOMENTE os nomes, um por linha. IGNORE qualquer outra informação como: números de matrícula, turma, disciplina, data, cabeçalhos, rodapés, notas, assinaturas, etc. Se houver mais de um nome na mesma linha, separe em linhas diferentes. Não adicione numeração, pontuação ou textos extras. Apenas os nomes.' },
-                ],
-              },
-            ],
+            message: [
+              { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+              { type: 'text', text: 'Extraia apenas os nomes completos dos alunos. Retorne SOMENTE os nomes, um por linha. IGNORE qualquer outra informação como: números de matrícula, turma, disciplina, data, cabeçalhos, rodapés, notas, assinaturas, etc. Se houver mais de um nome na mesma linha, separe em linhas diferentes. Não adicione numeração, pontuação ou textos extras. Apenas os nomes.' },
+            ]
           }),
         });
 
         const data = await resp.json();
         if (data.error) {
-          throw new Error(data.error.message || 'Erro retornado pela API da Anthropic');
+          throw new Error(data.error.message || data.error || 'Erro retornado pela API da Anthropic');
         }
 
         const texto = data.content?.find((b) => b.type === 'text')?.text || '';
