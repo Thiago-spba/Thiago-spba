@@ -9,7 +9,6 @@
     return res.status(400).json({ error: 'Mensagem não fornecida' });
   }
 
-  // Validação Fail-fast
   if (!process.env.ANTHROPIC_API_KEY) {
     console.error("Falha Crítica: ANTHROPIC_API_KEY ausente nas variáveis de ambiente.");
     return res.status(500).json({ error: 'Erro de configuração no servidor.' });
@@ -24,7 +23,7 @@
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-haiku-20240307', // Modelo alterado para a versão Haiku (mais barata)
+        model: 'claude-3-5-haiku-20241022', // Atualizado para a versão 3.5 Haiku
         max_tokens: 1024,
         messages: [{ role: 'user', content: message }]
       })
