@@ -108,7 +108,36 @@ export default function PlanilhaPage({ turma }) {
   }
 
   const salvarEscola = async () => {
-    await setDoc(doc(db,"config","professor"), {escola:escolaInput}, {merge:true})
+    await setDoc(doc(db,"config","professor"), {escola:escolaInput}
+
+  const limparTurmaToda = async () => {
+    if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os alunos, notas e relatórios desta turma. Tem certeza absoluta?")) return;
+    
+    setCarregando(true);
+    try {
+      const qAlunos = query(collection(db, "alunos"), where("turmaId", "==", turma.id));
+      const snapAlunos = await getDocs(qAlunos);
+      
+      const qNotas = query(collection(db, "notas"), where("turmaId", "==", turma.id));
+      const snapNotas = await getDocs(qNotas);
+      
+      const qRelatorios = query(collection(db, "relatorios"), where("turmaId", "==", turma.id));
+      const snapRelatorios = await getDocs(qRelatorios);
+
+      // Deleta tudo em lote para ser rápido
+      const promessas = [];
+      snapAlunos.docs.forEach(d => promessas.push(deleteDoc(doc(db, "alunos", d.id))));
+      snapNotas.docs.forEach(d => promessas.push(deleteDoc(doc(db, "notas", d.id))));
+      snapRelatorios.docs.forEach(d => promessas.push(deleteDoc(doc(db, "relatorios", d.id))));
+      
+      await Promise.all(promessas);
+      alert("Lista limpa com sucesso!");
+    } catch (err) {
+      alert("Erro ao limpar a lista: " + err.message);
+    }
+    setCarregando(false);
+  };
+, {merge:true})
     setEscola(escolaInput); setEditandoEscola(false)
   }
 
@@ -323,9 +352,34 @@ export default function PlanilhaPage({ turma }) {
               <button className="btn-primary" onClick={salvarEscola} style={{flex:1}}>Salvar</button>
               <button className="btn-ghost" onClick={()=>setEditandoEscola(false)} style={{flex:1}}>Cancelar</button>
             </div>
-          </div>
-        </div>
-      )}
+          
+      <div style={{display:"flex",gap:"0.5rem",marginTop:"1rem",flexWrap:"wrap"}}>
+        <button 
+          onClick={limparTurmaToda} 
+          disabled={alunos.length === 0 || carregando}
+          style={{
+            background: alunos.length === 0 ? "#f87171" : "#DC2626",
+            color: "white",
+            border: "none",
+            borderRadius: "8px",
+            padding: "0.75rem 1rem",
+            cursor: alunos.length === 0 ? "not-allowed" : "pointer",
+            fontWeight: "600",
+            fontSize: "0.9rem",
+            width: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "0.5rem",
+            boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
+          }}>
+          {carregando ? "⏳ Apagando..." : "🗑️ Apagar Todos os Alunos Desta Turma"}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 
       {importando && (
         <div style={overlay}>
