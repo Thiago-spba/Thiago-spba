@@ -6,23 +6,52 @@ const BIMESTRES = ["1 Bimestre","2 Bimestre","3 Bimestre","4 Bimestre"]
 const CRITERIOS = ["atividades","participacao","comportamento"]
 const LABELS    = ["Atividades","Participação","Comportamento"]
 
-function corNota(n) {
+function corNota(n, darkMode) {
   if (n==="" || n===null || n===undefined) return {}
   const v = Number(n)
-  if (v<=4) return { background: "#fce4e4", color: "#a0001a" }
-  if (v<=6) return { background: "#fff3e0", color: "#8a5a00" }
-  if (v<=8) return { background: "#e6f4ea", color: "#1e5e2e" }
-  return { background: "#e0edfb", color: "#003d7a" }
+  const base = darkMode ? {
+    bgLow: "#4a1a1a", colorLow: "#ffb3b3",
+    bgMed: "#4a3a1a", colorMed: "#ffe0b3",
+    bgHigh: "#1a3a1a", colorHigh: "#b3ffb3",
+    bgTop: "#1a2a4a", colorTop: "#b3d9ff"
+  } : {
+    bgLow: "#fce4e4", colorLow: "#a0001a",
+    bgMed: "#fff3e0", colorMed: "#8a5a00",
+    bgHigh: "#e6f4ea", colorHigh: "#1e5e2e",
+    bgTop: "#e0edfb", colorTop: "#003d7a"
+  }
+  if (v<=4) return { background: base.bgLow, color: base.colorLow }
+  if (v<=6) return { background: base.bgMed, color: base.colorMed }
+  if (v<=8) return { background: base.bgHigh, color: base.colorHigh }
+  return { background: base.bgTop, color: base.colorTop }
 }
 
 export default function PlanilhaPage({ turma }) {
+  // Estados principais
   const [bimestre, setBimestre] = useState("1 Bimestre")
   const [alunos, setAlunos]    = useState([])
   const [notas, setNotas]      = useState({})
   const [local, setLocal]      = useState({})
   const [nome, setNome]        = useState("")
   const [carregando, setCarregando] = useState(false)
+  const [accordionOpen, setAccordionOpen] = useState(false)
 
+  // Detecta dark mode via classe no html
+  const [darkMode, setDarkMode] = useState(false)
+
+  useEffect(() => {
+    const checkDark = () => {
+      const isDark = document.documentElement.classList.contains('dark') ||
+                     document.documentElement.getAttribute('data-theme') === 'dark'
+      setDarkMode(isDark)
+    }
+    checkDark()
+    const observer = new MutationObserver(checkDark)
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class', 'data-theme'] })
+    return () => observer.disconnect()
+  }, [])
+
+  // Função para limpar turma
   const limparTurmaToda = async () => {
     if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os alunos, notas e relatórios desta turma. Tem certeza absoluta?")) return;
     if (!confirm("🔄 Última chance: deseja realmente continuar? Esta ação é irreversível!")) return;
@@ -46,6 +75,7 @@ export default function PlanilhaPage({ turma }) {
     setCarregando(false);
   };
 
+  // Firestore listeners
   useEffect(() => {
     const q = query(collection(db,"alunos"), where("turmaId","==",turma.id))
     return onSnapshot(q, snap => {
@@ -66,6 +96,7 @@ export default function PlanilhaPage({ turma }) {
     })
   }, [turma.id, bimestre])
 
+  // Funções auxiliares
   const getVal = (alunoId, campo) => {
     const k = alunoId+"_"+campo
     return local[k] !== undefined ? local[k] : (notas[alunoId]?.[campo] ?? "")
@@ -101,44 +132,100 @@ export default function PlanilhaPage({ turma }) {
     if (confirm("Remover esse aluno?")) await deleteDoc(doc(db,"alunos",id))
   }
 
-  // 🎨 Estilos com alto contraste e responsividade
+  // Cores dinâmicas para dark mode
+  const colors = {
+    bg: darkMode ? "#1a1a1a" : "#fcf8f2",
+    card: darkMode ? "#2a2a2a" : "#fcf8f2",
+    cardBorder: darkMode ? "#444" : "#d6c8b4",
+    text: darkMode ? "#e0dcd6" : "#1a1a1a",
+    textSecondary: darkMode ? "#aaa" : "#3e2e1f",
+    headerBg: darkMode ? "#3a3a3a" : "#d9c9b0",
+    headerText: darkMode ? "#f0ece6" : "#1a1a1a",
+    tabInactive: darkMode ? "#2a2a2a" : "#fcf8f2",
+    tabActive: darkMode ? "#5a4a3a" : "#4a3728",
+    tabTextInactive: darkMode ? "#ccc" : "#2c1f12",
+    tabTextActive: darkMode ? "#f0ece6" : "#fcf8f2",
+    inputBg: darkMode ? "#333" : "white",
+    inputBorder: darkMode ? "#555" : "#b8a68b",
+    placeholder: darkMode ? "#888" : "#6b5a4a",
+    btnPrimary: darkMode ? "#5a4a3a" : "#4a3728",
+    btnPrimaryText: darkMode ? "#f0ece6" : "white",
+    btnDanger: darkMode ? "#8b1a1a" : "#b22234",
+    btnDangerText: "white",
+    rowEven: darkMode ? "#222" : "#f5efe8",
+    rowOdd: darkMode ? "transparent" : "transparent",
+    deleteIcon: darkMode ? "#cc4444" : "#b22234",
+    shadow: darkMode ? "0 4px 14px rgba(0,0,0,0.5)" : "0 4px 14px rgba(0,0,0,0.08)"
+  }
+
+  // Estilos
   const styles = {
     container: {
       marginTop: "1rem",
       fontFamily: "'Crimson Text', Georgia, serif",
-      color: "#1a1a1a"
+      color: colors.text
     },
-    tabContainer: {
-      display: "flex",
-      gap: "0.3rem",
-      padding: "0.4rem",
-      background: "#ede6db",
+    accordionWrapper: {
+      marginBottom: "1.2rem"
+    },
+    accordionButton: {
+      width: "100%",
+      padding: "0.8rem 1rem",
+      background: colors.tabActive,
+      color: colors.tabTextActive,
+      border: `1px solid ${colors.cardBorder}`,
       borderRadius: "10px",
-      marginBottom: "1.2rem",
-      flexWrap: "wrap",
-      justifyContent: "center"
-    },
-    tabButton: (active) => ({
-      flex: "1 1 auto",
-      minWidth: "70px",
-      padding: "0.6rem 0.4rem",
-      borderRadius: "6px",
-      border: "1px solid #b8a68b",
+      fontSize: "1rem",
+      fontWeight: "700",
       cursor: "pointer",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
       fontFamily: "'Playfair Display', serif",
-      fontSize: "clamp(0.8rem, 2vw, 1rem)",
-      fontWeight: active ? "700" : "500",
-      background: active ? "#4a3728" : "#fcf8f2",
-      color: active ? "#fcf8f2" : "#2c1f12",
-      transition: "0.2s",
-      boxShadow: active ? "0 2px 6px rgba(0,0,0,0.2)" : "none"
+      transition: "0.2s"
+    },
+    accordionIcon: {
+      fontSize: "1.2rem",
+      transition: "transform 0.3s",
+      transform: accordionOpen ? "rotate(180deg)" : "rotate(0deg)"
+    },
+    accordionContent: {
+      overflow: "hidden",
+      maxHeight: accordionOpen ? "300px" : "0",
+      transition: "max-height 0.3s ease",
+      background: colors.card,
+      borderRadius: "0 0 10px 10px",
+      border: accordionOpen ? `1px solid ${colors.cardBorder}` : "none",
+      borderTop: "none"
+    },
+    accordionList: {
+      listStyle: "none",
+      margin: 0,
+      padding: "0.5rem 0",
+      display: "flex",
+      flexDirection: "column",
+      gap: "0.2rem"
+    },
+    accordionItem: (isSelected) => ({
+      padding: "0.6rem 1rem",
+      cursor: "pointer",
+      background: isSelected ? colors.tabActive : "transparent",
+      color: isSelected ? colors.tabTextActive : colors.text,
+      fontWeight: isSelected ? "700" : "400",
+      transition: "0.15s",
+      borderRadius: "4px",
+      margin: "0 0.3rem",
+      border: "none",
+      textAlign: "left",
+      fontFamily: "'Crimson Text', serif",
+      fontSize: "0.95rem"
     }),
     card: {
-      background: "#fcf8f2",
+      background: colors.card,
       borderRadius: "12px",
       padding: "0.8rem 0.5rem",
-      boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
-      border: "1px solid #d6c8b4",
+      boxShadow: colors.shadow,
+      border: `1px solid ${colors.cardBorder}`,
       overflowX: "auto",
       marginBottom: "1.2rem"
     },
@@ -150,19 +237,19 @@ export default function PlanilhaPage({ turma }) {
       minWidth: "500px"
     },
     th: {
-      background: "#d9c9b0",
-      color: "#1a1a1a",
+      background: colors.headerBg,
+      color: colors.headerText,
       padding: "0.7rem 0.5rem",
       textAlign: "left",
       fontFamily: "'Playfair Display', serif",
       fontWeight: "700",
       fontSize: "0.9rem",
-      borderBottom: "2px solid #b8a68b"
+      borderBottom: `2px solid ${colors.cardBorder}`
     },
     td: {
       padding: "0.5rem 0.4rem",
-      borderBottom: "1px solid #e3d9cb",
-      color: "#1a1a1a"
+      borderBottom: `1px solid ${colors.cardBorder}`,
+      color: colors.text
     },
     inputNota: {
       width: "4.2rem",
@@ -171,32 +258,29 @@ export default function PlanilhaPage({ turma }) {
       fontSize: "1rem",
       fontWeight: "700",
       padding: "0.2rem 0.2rem",
-      border: "1px solid #b8a68b",
+      border: `1px solid ${colors.inputBorder}`,
       borderRadius: "4px",
-      background: "white",
-      color: "#1a1a1a"
+      background: colors.inputBg,
+      color: colors.text
     },
     inputNome: {
       flex: "1 1 180px",
       padding: "0.7rem 0.9rem",
       borderRadius: "8px",
-      border: "1px solid #b8a68b",
+      border: `1px solid ${colors.inputBorder}`,
       fontFamily: "'Crimson Text', serif",
       fontSize: "1rem",
-      backgroundColor: "white",
+      background: colors.inputBg,
+      color: colors.text,
       outline: "none",
-      color: "#1a1a1a",
       minWidth: "150px"
-    },
-    inputNomePlaceholder: {
-      color: "#6b5a4a"
     },
     btnPrimary: {
       padding: "0.7rem 1.5rem",
       borderRadius: "8px",
       border: "none",
-      background: "#4a3728",
-      color: "white",
+      background: colors.btnPrimary,
+      color: colors.btnPrimaryText,
       fontWeight: "700",
       cursor: "pointer",
       fontFamily: "'Crimson Text', serif",
@@ -209,8 +293,8 @@ export default function PlanilhaPage({ turma }) {
       padding: "0.7rem 1.5rem",
       borderRadius: "8px",
       border: "none",
-      background: "#b22234",
-      color: "white",
+      background: colors.btnDanger,
+      color: colors.btnDangerText,
       fontWeight: "700",
       cursor: "pointer",
       fontFamily: "'Crimson Text', serif",
@@ -229,20 +313,20 @@ export default function PlanilhaPage({ turma }) {
       cursor: "not-allowed"
     },
     rowEven: {
-      background: "#f5efe8"
+      background: colors.rowEven
     },
     rowOdd: {
-      background: "transparent"
+      background: colors.rowOdd
     },
     emptyRow: {
       padding: "1.8rem",
       textAlign: "center",
-      color: "#3e2e1f",
+      color: colors.textSecondary,
       fontStyle: "italic",
       fontSize: "1rem"
     },
     deleteIcon: {
-      color: "#b22234",
+      color: colors.deleteIcon,
       background: "none",
       border: "none",
       cursor: "pointer",
@@ -261,14 +345,35 @@ export default function PlanilhaPage({ turma }) {
 
   return (
     <div style={styles.container}>
-      <div style={styles.tabContainer}>
-        {BIMESTRES.map(b => (
-          <button key={b} onClick={() => setBimestre(b)} style={styles.tabButton(bimestre === b)}>
-            {b}
-          </button>
-        ))}
+      {/* Accordion de bimestres */}
+      <div style={styles.accordionWrapper}>
+        <button 
+          style={styles.accordionButton} 
+          onClick={() => setAccordionOpen(!accordionOpen)}
+        >
+          <span>📚 {bimestre}</span>
+          <span style={styles.accordionIcon}>▼</span>
+        </button>
+        <div style={styles.accordionContent}>
+          <ul style={styles.accordionList}>
+            {BIMESTRES.map(b => (
+              <li key={b}>
+                <button
+                  style={styles.accordionItem(b === bimestre)}
+                  onClick={() => {
+                    setBimestre(b)
+                    setAccordionOpen(false)
+                  }}
+                >
+                  {b}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
+      {/* Tabela */}
       <div style={styles.card}>
         <table style={styles.table}>
           <thead>
@@ -288,8 +393,8 @@ export default function PlanilhaPage({ turma }) {
             {alunos.map((a, i) => {
               const rowStyle = i % 2 === 0 ? styles.rowEven : styles.rowOdd
               return (
-                <tr key={a.id} style={{...rowStyle, borderBottom: "1px solid #e3d9cb"}}>
-                  <td style={{...styles.td, textAlign: "center", color: "#4a3a2a", fontSize: "0.85rem"}}>
+                <tr key={a.id} style={{...rowStyle, borderBottom: `1px solid ${colors.cardBorder}`}}>
+                  <td style={{...styles.td, textAlign: "center", color: colors.textSecondary, fontSize: "0.85rem"}}>
                     {String(i+1).padStart(2,"0")}
                   </td>
                   <td style={{...styles.td, fontWeight: "600"}}>{a.nome}</td>
@@ -305,7 +410,7 @@ export default function PlanilhaPage({ turma }) {
                           value={val}
                           onChange={e => onChange(a.id, c, e.target.value)}
                           onBlur={e => onBlur(a.id, c, e.target.value)}
-                          style={{...styles.inputNota, ...corNota(val)}}
+                          style={{...styles.inputNota, ...corNota(val, darkMode)}}
                         />
                       </td>
                     )
@@ -320,6 +425,7 @@ export default function PlanilhaPage({ turma }) {
         </table>
       </div>
 
+      {/* Ações */}
       <div style={styles.actionRow}>
         <input
           style={styles.inputNome}
