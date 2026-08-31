@@ -5,16 +5,33 @@ import TurmasPage from "./pages/TurmasPage"
 import PlanilhaPage from "./pages/PlanilhaPage"
 import LoginPage from "./pages/LoginPage"
 
+// Lista de e-mails autorizados (acesso exclusivo)
+const EMAILS_AUTORIZADOS = ["thiago.rpba@gmail.com"]
+
 export default function App() {
   const [user, setUser] = useState(null)
   const [authLoading, setAuthLoading] = useState(true)
+  const [acessoNegado, setAcessoNegado] = useState(false)
+  const [emailTentativa, setEmailTentativa] = useState("")
   const [pagina, setPagina] = useState("turmas")
   const [turmaSel, setTurmaSel] = useState(null)
   const [dark, setDark] = useState(() => localStorage.getItem("dark") === "true")
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser)
+      if (currentUser) {
+        if (EMAILS_AUTORIZADOS.includes(currentUser.email)) {
+          setUser(currentUser)
+          setAcessoNegado(false)
+        } else {
+          setEmailTentativa(currentUser.email || "")
+          setAcessoNegado(true)
+          signOut(auth)
+          setUser(null)
+        }
+      } else {
+        setUser(null)
+      }
       setAuthLoading(false)
     })
     return () => unsubscribe()
@@ -33,6 +50,23 @@ export default function App() {
     return (
       <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
         <p style={{ color: "#64748b", fontWeight: "500" }}>Carregando Diário...</p>
+      </div>
+    )
+  }
+
+  if (acessoNegado) {
+    return (
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)", padding: "1rem" }}>
+        <div style={{ maxWidth: "420px", width: "100%", background: "#ffffff", padding: "2rem", borderRadius: "16px", textAlign: "center", border: "1px solid #fee2e2", boxShadow: "0 10px 25px -5px rgba(0,0,0,0.1)" }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: "1rem" }}>🚫</div>
+          <h2 style={{ fontSize: "1.3rem", fontWeight: "700", color: "#b91c1c", marginBottom: "0.5rem" }}>Acesso Não Autorizado</h2>
+          <p style={{ fontSize: "0.9rem", color: "#64748b", marginBottom: "1.5rem" }}>
+            A conta <strong>{emailTentativa}</strong> não tem permissão para acessar este diário. Este aplicativo é de uso exclusivo do Professor.
+          </p>
+          <button onClick={() => setAcessoNegado(false)} style={{ background: "#0f172a", color: "#ffffff", padding: "0.75rem 1.5rem", borderRadius: "8px", border: "none", fontWeight: "600", cursor: "pointer" }}>
+            Tentar com outra conta
+          </button>
+        </div>
       </div>
     )
   }
