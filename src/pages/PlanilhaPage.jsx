@@ -208,7 +208,7 @@ export default function PlanilhaPage({ turma }) {
     XLSX.writeFile(wb,turma.nome+"_"+bimestre+".xlsx"); setMenu(false)
   }
 
-      const handleArquivo = async (e) => {
+        const handleArquivo = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setCarregando(true);
@@ -252,49 +252,25 @@ export default function PlanilhaPage({ turma }) {
       try {
         const base64 = await new Promise((res, rej) => {
           const r = new FileReader();
-          r.onload = () => res(r.result.split(','));
+          r.onload = () => res(r.result.split(',')[1]); // Extrai apenas os dados puros (base64)
           r.onerror = () => rej(new Error('Falha ao ler o arquivo PDF.'));
           r.readAsDataURL(file);
         });
 
-        const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-        if (!apiKey) {
-          throw new Error('Chave da Anthropic (VITE_ANTHROPIC_API_KEY) não encontrada nas variáveis de ambiente.');
-        }
-
-        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        // NOVA CHAMADA: Envia para a API Serverless local em vez de ir direto para a Anthropic
+        const resp = await fetch('/api/extract-names', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
-          },
-          body: JSON.stringify({
-            model: 'claude-3-5-haiku-20241022',
-            max_tokens: 2000,
-            messages: [
-              {
-                role: 'user',
-                content: [
-                  { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-                  { type: 'text', text: 'Extraia apenas os nomes completos dos alunos. Retorne SOMENTE os nomes, um por linha, sem numeração e sem textos adicionais.' },
-                ],
-              },
-            ],
-          }),
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64 })
         });
 
         const data = await resp.json();
-        if (data.error) {
-          throw new Error(data.error.message || 'Erro retornado pela API da Anthropic');
+        if (!resp.ok) {
+          throw new Error(data.error || 'Erro interno no servidor ao se comunicar com a IA.');
         }
 
-        const texto = data.content?.find((b) => b.type === 'text')?.text || '';
-        const lista = texto.split(/\r?\n/).map((n) => n.trim()).filter((n) => n.length > 2);
-
-        if (lista.length > 0) {
-          setNomesEditados(lista);
+        if (data.nomes && data.nomes.length > 0) {
+          setNomesEditados(data.nomes);
         } else {
           alert('A IA não conseguiu identificar nomes no PDF fornecido.');
         }
