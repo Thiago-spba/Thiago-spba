@@ -53,7 +53,7 @@ export default function PlanilhaPage({ turma }) {
   const [escola, setEscola]                 = useState("")
   const [escolaInput, setEscolaInput]       = useState("")
   const [editandoEscola, setEditandoEscola] = useState(false)
-  const [apagandoTodos, setApagandoTodos]   = useState(false) // novo estado
+  const [apagandoTodos, setApagandoTodos]   = useState(false)
 
   useEffect(() => {
     getDoc(doc(db,"config","professor")).then(d => {
@@ -108,7 +108,6 @@ export default function PlanilhaPage({ turma }) {
     if (confirm("Remover esse aluno?")) await deleteDoc(doc(db,"alunos",id))
   }
 
-  // 🗑️ NOVA FUNÇÃO: Apagar TODOS os alunos da turma
   const limparTurmaToda = async () => {
     if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os alunos, notas e relatórios desta turma. Tem certeza absoluta?")) return;
     if (!confirm("🔄 Última chance: deseja realmente continuar? Esta ação é irreversível!")) return;
@@ -144,39 +143,87 @@ export default function PlanilhaPage({ turma }) {
     if (!snap.empty) { setRelTexto(snap.docs[0].data().texto); setRelExiste(true) }
   }
 
+  // 🔥 FUNÇÃO GERAR RELATÓRIO REFATORADA – usando palavras-chave como base
   const gerarRelatorio = async () => {
     setGerando(true)
+
+    // Buscar notas do bimestre atual
+    const notasAtuais = notas[modalAluno.id] || {}
+    const temNotasAtuais = notasAtuais.atividades !== "" || notasAtuais.participacao !== "" || notasAtuais.comportamento !== ""
+
+    // Buscar notas de bimestres anteriores (apenas para contexto, se existirem)
     const todasNotas = {}
     for (const b of BIMESTRES) {
-      const snap = await getDocs(query(collection(db,"notas"), where("alunoId","==",modalAluno.id), where("trimestre","==",b)))
-      if (!snap.empty) {
-        const d = snap.docs[0].data()
-        if (d.atividades!=="" || d.participacao!=="" || d.comportamento!=="") todasNotas[b] = d
+      if (b === bimestre) {
+        // já temos notasAtuais
+        if (temNotasAtuais) todasNotas[b] = notasAtuais
+      } else {
+        const snap = await getDocs(query(collection(db,"notas"), where("alunoId","==",modalAluno.id), where("trimestre","==",b)))
+        if (!snap.empty) {
+          const d = snap.docs[0].data()
+          if (d.atividades!=="" || d.participacao!=="" || d.comportamento!=="") todasNotas[b] = d
+        }
       }
     }
-    const temNotas = Object.keys(todasNotas).length > 0
+
     const cred = credenciais(turma.tipo)
     const dataHoje = new Date().toLocaleDateString("pt-BR")
     const escolaTexto = escola ? "Escola: "+escola+"." : ""
-    const notasTexto = Object.entries(todasNotas).map(([b,n]) => b+": Atividades="+(n.atividades||"-")+", Participação="+(n.participacao||"-")+", Comportamento="+(n.comportamento||"-")).join(" | ")
-    let prompt = ""
-    if (relTipo==="indisciplina") {
-      prompt = "Gere uma Avaliação Descritiva de Indisciplina escolar formal, pedagógica e não punitiva para o aluno "+modalAluno.nome+", turma "+turma.nome+", disciplina "+turma.disciplina+". "+escolaTexto+" Palavras-chave: "+(palavrasChave||"comportamento inadequado")+". "+(temNotas?"Notas: "+notasTexto+".":"")+" Obs: "+(modalAluno.obs||"nenhuma")+". Texto corrido sem títulos, sem asteriscos, sem markdown. Ao final: Prof. Thiago Fernando, "+cred+". Data: "+dataHoje+"."
-    } else if (!temNotas) {
-      prompt = "Gere breve Avaliação Descritiva para "+modalAluno.nome+", turma "+turma.nome+", disciplina "+turma.disciplina+". "+escolaTexto+" Sem notas, apenas nome e turma. Texto corrido, sem asteriscos, sem markdown. Assine: Prof. Thiago Fernando, "+cred+". Data: "+dataHoje+"."
-    } else {
-      prompt = "Gere uma Avaliação Descritiva escolar profissional e humanizada para "+modalAluno.nome+", turma "+turma.nome+", disciplina "+turma.disciplina+". "+escolaTexto+" Palavras-chave: "+(palavrasChave||"nenhuma")+". Notas (só bimestres com dados): "+notasTexto+". Obs: "+(modalAluno.obs||"nenhuma")+". Parágrafo único, sem títulos, sem asteriscos, sem markdown. Ao final: Prof. Thiago Fernando, "+cred+". Data: "+dataHoje+"."
+    const notasTexto = Object.entries(todasNotas).map(([b,n]) => 
+      b+": Atividades="+(n.atividades||"-")+", Participação="+(n.participacao||"-")+", Comportamento="+(n.comportamento||"-")
+    ).join(" | ")
+
+    // Construção do prompt – FORÇANDO o uso das palavras-chave
+    const palavras = palavrasChave.trim() || "Nenhuma palavra-chave fornecida"
+    const obs = modalAluno.obs || "nenhuma"
+
+    let prompt = `Escreva uma avaliação descritiva escolar para o aluno ${modalAluno.nome} (turma ${turma.nome}, disciplina ${turma.disciplina}). ${escolaTexto}
+
+**INSTRUÇÕES OBRIGATÓRIAS:**
+1. O relatório deve ser construído **exclusivamente** a partir das seguintes palavras-chave fornecidas pelo professor:
+   "${palavras}"
+2. **NÃO INVENTE** nenhuma informação que não esteja nessas palavras-chave.
+3. Se as palavras-chave descrevem dificuldades, o relatório deve abordá-las de forma clara e objetiva.
+4. Se as palavras-chave descrevem qualidades, destaque-as.
+5. As notas (se existentes) servem apenas como contexto adicional, mas não devem ser o foco principal.
+6. Escreva em **linguagem simples, clara e direta**, em um único parágrafo.
+7. **NÃO** use títulos, asteriscos, markdown ou listas.
+8. **NÃO** invente assinaturas ou datas – elas serão adicionadas automaticamente.
+
+Informações adicionais (apenas para contexto):
+- Notas (todos os bimestres com dados): ${notasTexto || "Nenhuma nota registrada."}
+- Observação do professor: ${obs}
+
+Agora, escreva o relatório.`
+
+    if (relTipo === "indisciplina") {
+      prompt = `Escreva uma avaliação descritiva de indisciplina escolar, com tom pedagógico e não punitivo, para o aluno ${modalAluno.nome}. ${prompt}`
     }
+
     try {
       const resp = await fetch("https://api.anthropic.com/v1/messages", {
         method:"POST",
         headers:{"Content-Type":"application/json","x-api-key":import.meta.env.VITE_ANTHROPIC_API_KEY,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
-        body:JSON.stringify({model:"claude-haiku-4-5-20251001",max_tokens:600,messages:[{role:"user",content:prompt}]})
+        body:JSON.stringify({
+          model:"claude-haiku-4-5-20251001",
+          max_tokens:600,
+          messages:[{role:"user",content:prompt}]
+        })
       })
       const json = await resp.json()
       const textoRaw = json.content?.find(b=>b.type==="text")?.text || "Erro ao gerar."
       const texto = limparMarkdown(textoRaw)
-      await addDoc(collection(db,"relatorios"), {alunoId:modalAluno.id,alunoNome:modalAluno.nome,turmaId:turma.id,bimestre,texto,palavrasChave,tipo:relTipo,criadoEm:new Date().toISOString()})
+      // Salva no banco
+      await addDoc(collection(db,"relatorios"), {
+        alunoId:modalAluno.id,
+        alunoNome:modalAluno.nome,
+        turmaId:turma.id,
+        bimestre,
+        texto,
+        palavrasChave: palavras,
+        tipo:relTipo,
+        criadoEm:new Date().toISOString()
+      })
       setRelTexto(texto); setRelExiste(true)
     } catch(err) { alert("Erro: "+err.message) }
     setGerando(false)
@@ -233,9 +280,8 @@ export default function PlanilhaPage({ turma }) {
     XLSX.writeFile(wb,turma.nome+"_"+bimestre+".xlsx"); setMenu(false)
   }
 
-  // 🔧 FUNÇÃO MELHORADA: Extrair nomes do Excel
+  // Extrair nomes do Excel
   const extrairNomesExcel = (rows) => {
-    // Primeiro, tentar identificar a linha de cabeçalho e a coluna que contém "nome"
     let headerRowIndex = -1;
     let nomeColIndex = -1;
     
@@ -255,13 +301,11 @@ export default function PlanilhaPage({ turma }) {
 
     const nomes = [];
     if (headerRowIndex !== -1 && nomeColIndex !== -1) {
-      // Extrair da coluna identificada
       for (let i = headerRowIndex + 1; i < rows.length; i++) {
         const row = rows[i];
         if (!Array.isArray(row) || row.length <= nomeColIndex) continue;
         const val = String(row[nomeColIndex] || '').trim();
         if (val.length > 2 && /[a-zA-ZÀ-ÿ]/.test(val)) {
-          // Remove números, pontuação desnecessária, mas mantém nome completo
           const nomeLimpo = val.replace(/[^\w\sÀ-ÿ]/g, '').replace(/\s+/g, ' ').trim();
           if (nomeLimpo && !/^\d+$/.test(nomeLimpo)) {
             nomes.push(nomeLimpo);
@@ -269,7 +313,6 @@ export default function PlanilhaPage({ turma }) {
         }
       }
     } else {
-      // Fallback: varrer todas as células e filtrar por padrão de nome
       const palavrasIgnorar = ['turma', 'data', 'professor', 'disciplina', 'escola', 'ano', 'bimestre', 'matrícula', 'ra', 'nº', 'numero', 'nota', 'atividade', 'participação', 'comportamento', 'obs', 'observação'];
       for (const row of rows) {
         if (!Array.isArray(row)) continue;
@@ -281,14 +324,13 @@ export default function PlanilhaPage({ turma }) {
           if (palavrasIgnorar.some(p => lower.includes(p))) continue;
           if (/[a-zA-ZÀ-ÿ]{3,}/.test(limpo) && !/^\d+$/.test(limpo)) {
             const nomeLimpo = limpo.replace(/[^\w\sÀ-ÿ]/g, '').replace(/\s+/g, ' ').trim();
-            if (nomeLimpo && nomeLimpo.split(' ').length >= 2) { // nome completo (pelo menos 2 palavras)
+            if (nomeLimpo && nomeLimpo.split(' ').length >= 2) {
               nomes.push(nomeLimpo);
             }
           }
         }
       }
     }
-    // Remove duplicatas
     return Array.from(new Set(nomes));
   };
 
@@ -306,7 +348,6 @@ export default function PlanilhaPage({ turma }) {
         const sheet = workbook.Sheets[sheetName];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
         const nomesExtraidos = extrairNomesExcel(rows);
-        
         if (nomesExtraidos.length > 0) {
           setNomesEditados(nomesExtraidos);
         } else {
@@ -323,7 +364,7 @@ export default function PlanilhaPage({ turma }) {
       try {
         const base64 = await new Promise((res, rej) => {
           const r = new FileReader();
-          r.onload = () => res(r.result.split(',')[1]); // pega apenas base64
+          r.onload = () => res(r.result.split(',')[1]);
           r.onerror = () => rej(new Error('Falha ao ler o arquivo PDF.'));
           r.readAsDataURL(file);
         });
@@ -349,7 +390,6 @@ export default function PlanilhaPage({ turma }) {
                 role: 'user',
                 content: [
                   { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-                  // 🔧 PROMPT MELHORADO:
                   { type: 'text', text: 'Extraia apenas os nomes completos dos alunos. Retorne SOMENTE os nomes, um por linha. IGNORE qualquer outra informação como: números de matrícula, turma, disciplina, data, cabeçalhos, rodapés, notas, assinaturas, etc. Se houver mais de um nome na mesma linha, separe em linhas diferentes. Não adicione numeração, pontuação ou textos extras. Apenas os nomes.' },
                 ],
               },
@@ -366,7 +406,6 @@ export default function PlanilhaPage({ turma }) {
         const lista = texto.split(/\r?\n/).map((n) => n.trim()).filter((n) => n.length > 2 && /[a-zA-ZÀ-ÿ]/.test(n));
 
         if (lista.length > 0) {
-          // Remove duplicatas e filtra nomes completos (pelo menos 2 palavras)
           const unicos = Array.from(new Set(lista));
           const nomesFiltrados = unicos.filter(n => n.split(' ').length >= 2);
           setNomesEditados(nomesFiltrados.length > 0 ? nomesFiltrados : unicos);
@@ -410,7 +449,6 @@ export default function PlanilhaPage({ turma }) {
             </div>
           )}
         </div>
-        {/* 🆕 Botão APAGAR TODOS os alunos */}
         <button 
           onClick={limparTurmaToda} 
           disabled={alunos.length === 0 || apagandoTodos}
@@ -491,13 +529,24 @@ export default function PlanilhaPage({ turma }) {
                   <button onClick={()=>setRelTipo("descritiva")} className={relTipo==="descritiva"?"btn-primary":"btn-ghost"} style={{flex:1,fontSize:"0.85rem"}}>📝 Padrão</button>
                   <button onClick={()=>setRelTipo("indisciplina")} style={{flex:1,fontSize:"0.85rem",border:"none",borderRadius:"8px",padding:"0.6rem",cursor:"pointer",fontWeight:"600",background:relTipo==="indisciplina"?"#DC2626":"transparent",color:relTipo==="indisciplina"?"white":"#DC2626",border:relTipo==="indisciplina"?"none":"1px solid #DC2626"}}>⚠️ Indisciplina</button>
                 </div>
-                <label style={{fontSize:"0.85rem",fontWeight:"600",color:"var(--text)",display:"block",marginBottom:"0.4rem"}}>Palavras-chave:</label>
-                <textarea value={palavrasChave} onChange={e=>setPalavrasChave(e.target.value)}
-                  placeholder={relTipo==="indisciplina"?"Ex: saída de sala, desrespeito, agressão verbal":"Ex: dedicado, participativo, atento"}
-                  style={{width:"100%",minHeight:"70px",padding:"0.6rem",border:"1px solid var(--border)",borderRadius:"8px",fontSize:"0.9rem",background:"var(--bg)",color:"var(--text)",resize:"vertical"}} />
+                <label style={{fontSize:"0.85rem",fontWeight:"600",color:"var(--text)",display:"block",marginBottom:"0.4rem"}}>
+                  Palavras-chave / referências:
+                  <span style={{fontWeight:"400",color:"var(--text-muted)",fontSize:"0.8rem"}}> (obrigatório – o relatório será escrito com base nelas)</span>
+                </label>
+                <textarea 
+                  value={palavrasChave} 
+                  onChange={e=>setPalavrasChave(e.target.value)}
+                  placeholder={relTipo==="indisciplina" 
+                    ? "Ex: saída de sala, desrespeito, agressão verbal, não segue regras, etc." 
+                    : "Ex: dedicado, participativo, atento, bom desempenho, dificuldade em matemática, etc."}
+                  style={{width:"100%",minHeight:"80px",padding:"0.6rem",border:"1px solid var(--border)",borderRadius:"8px",fontSize:"0.9rem",background:"var(--bg)",color:"var(--text)",resize:"vertical"}} 
+                />
+                <p style={{fontSize:"0.75rem",color:"var(--text-muted)",marginTop:"0.25rem",fontStyle:"italic"}}>
+                  ⚠️ O relatório será gerado <strong>estritamente</strong> com base nas palavras-chave fornecidas.
+                </p>
                 <button className="btn-primary" onClick={gerarRelatorio} disabled={gerando}
                   style={{width:"100%",marginTop:"0.75rem",background:relTipo==="indisciplina"?"#DC2626":undefined}}>
-                  {gerando?"⏳ Gerando...":"Gerar Avaliação Descritiva"}
+                  {gerando ? "⏳ Gerando..." : "Gerar Avaliação Descritiva"}
                 </button>
               </div>
             )}
