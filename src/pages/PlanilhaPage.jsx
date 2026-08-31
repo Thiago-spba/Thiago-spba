@@ -208,81 +208,77 @@ export default function PlanilhaPage({ turma }) {
     XLSX.writeFile(wb,turma.nome+"_"+bimestre+".xlsx"); setMenu(false)
   }
 
-    const handleArquivo = async (e) => {
+      const handleArquivo = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setCarregando(true);
-    const ext = file.name.split(".").pop().toLowerCase();
+    const ext = file.name.split('.').pop().toLowerCase();
 
-    // 1. IMPORTAÇÃO DIRETA DE EXCEL / CSV (Rápido, local e sem falhas)
-    if (ext === "xlsx" || ext === "xls" || ext === "csv") {
+    if (ext === 'xlsx' || ext === 'xls' || ext === 'csv') {
       try {
         const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: "array" });
+        const workbook = XLSX.read(buffer, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
         const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
         const nomesExtraidos = [];
         for (const row of rows) {
           if (!Array.isArray(row)) continue;
           for (const cell of row) {
-            if (typeof cell === "string") {
+            if (typeof cell === 'string') {
               const limpo = cell.trim();
               const lower = limpo.toLowerCase();
-              if (["nome", "aluno", "estudante", "nome do aluno", "ra", "nº", "numero", "turma"].includes(lower)) continue;
-              if (limpo.length > 2 && /[a-zA-ZÀ-ÿ]/.test(limpo) && !/^d+$/.test(limpo)) {
+              if (['nome', 'aluno', 'estudante', 'nome do aluno', 'ra', 'nº', 'numero', 'turma'].includes(lower)) continue;
+              if (limpo.length > 2 && /[a-zA-ZÀ-ÿ]/.test(limpo) && !/^\d+$/.test(limpo)) {
                 nomesExtraidos.push(limpo);
               }
             }
           }
         }
-
         const unicos = Array.from(new Set(nomesExtraidos));
         if (unicos.length > 0) {
           setNomesEditados(unicos);
         } else {
-          alert("Nenhum nome de aluno foi encontrado na planilha. Verifique se o arquivo possui uma coluna com os nomes.");
+          alert('Nenhum nome de aluno foi encontrado na planilha. Verifique se o arquivo possui uma coluna com os nomes.');
         }
       } catch (err) {
-        alert("Erro ao ler arquivo Excel: " + err.message);
+        alert('Erro ao ler arquivo Excel: ' + err.message);
       }
       setCarregando(false);
       return;
     }
 
-    // 2. IMPORTAÇÃO DE PDF VIA IA (Claude 3.5 Haiku)
-    if (ext === "pdf") {
+    if (ext === 'pdf') {
       try {
         const base64 = await new Promise((res, rej) => {
           const r = new FileReader();
-          r.onload = () => res(r.result.split(","));
-          r.onerror = () => rej(new Error("Falha ao ler o arquivo PDF."));
+          r.onload = () => res(r.result.split(','));
+          r.onerror = () => rej(new Error('Falha ao ler o arquivo PDF.'));
           r.readAsDataURL(file);
         });
 
         const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
         if (!apiKey) {
-          throw new Error("Chave da Anthropic (VITE_ANTHROPIC_API_KEY) não encontrada nas variáveis de ambiente.");
+          throw new Error('Chave da Anthropic (VITE_ANTHROPIC_API_KEY) não encontrada nas variáveis de ambiente.');
         }
 
-        const resp = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
+        const resp = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
-            "x-api-key": apiKey,
-            "anthropic-version": "2023-06-01",
-            "anthropic-dangerous-direct-browser-access": "true",
+            'Content-Type': 'application/json',
+            'x-api-key': apiKey,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
           },
           body: JSON.stringify({
-            model: "claude-3-5-haiku-20241022",
+            model: 'claude-3-5-haiku-20241022',
             max_tokens: 2000,
             messages: [
               {
-                role: "user",
+                role: 'user',
                 content: [
-                  { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64 } },
-                  { type: "text", text: "Extraia apenas os nomes completos dos alunos. Retorne SOMENTE os nomes, um por linha, sem numeração e sem textos adicionais." },
+                  { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
+                  { type: 'text', text: 'Extraia apenas os nomes completos dos alunos. Retorne SOMENTE os nomes, um por linha, sem numeração e sem textos adicionais.' },
                 ],
               },
             ],
@@ -291,29 +287,25 @@ export default function PlanilhaPage({ turma }) {
 
         const data = await resp.json();
         if (data.error) {
-          throw new Error(data.error.message || "Erro retornado pela API da Anthropic");
+          throw new Error(data.error.message || 'Erro retornado pela API da Anthropic');
         }
 
-        const texto = data.content?.find((b) => b.type === "text")?.text || "";
-        const lista = texto
-          .split("
-")
-          .map((n) => n.trim())
-          .filter((n) => n.length > 2);
+        const texto = data.content?.find((b) => b.type === 'text')?.text || '';
+        const lista = texto.split(/\r?\n/).map((n) => n.trim()).filter((n) => n.length > 2);
 
         if (lista.length > 0) {
           setNomesEditados(lista);
         } else {
-          alert("A IA não conseguiu identificar nomes no PDF fornecido.");
+          alert('A IA não conseguiu identificar nomes no PDF fornecido.');
         }
       } catch (err) {
-        alert("Erro na extração do PDF: " + err.message);
+        alert('Erro na extração do PDF: ' + err.message);
       }
       setCarregando(false);
       return;
     }
 
-    alert("Formato não suportado. Por favor, envie um arquivo .pdf, .xlsx, .xls ou .csv.");
+    alert('Formato não suportado. Por favor, envie um arquivo .pdf, .xlsx, .xls ou .csv.');
     setCarregando(false);
   };
 
