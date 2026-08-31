@@ -9,10 +9,10 @@ const LABELS    = ["Atividades","Participação","Comportamento"]
 function corNota(n) {
   if (n==="" || n===null || n===undefined) return {}
   const v = Number(n)
-  if (v<=4) return { background: "#fce4e4", color: "#b00020" }
-  if (v<=6) return { background: "#fff3e0", color: "#b26a00" }
-  if (v<=8) return { background: "#e8f5e9", color: "#1e5e2e" }
-  return { background: "#e3f2fd", color: "#0d47a1" }
+  if (v<=4) return { background: "#fce4e4", color: "#a0001a" }
+  if (v<=6) return { background: "#fff3e0", color: "#8a5a00" }
+  if (v<=8) return { background: "#e6f4ea", color: "#1e5e2e" }
+  return { background: "#e0edfb", color: "#003d7a" }
 }
 
 export default function PlanilhaPage({ turma }) {
@@ -25,6 +25,7 @@ export default function PlanilhaPage({ turma }) {
 
   const limparTurmaToda = async () => {
     if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os alunos, notas e relatórios desta turma. Tem certeza absoluta?")) return;
+    if (!confirm("🔄 Última chance: deseja realmente continuar? Esta ação é irreversível!")) return;
     setCarregando(true);
     try {
       const qAlunos = query(collection(db, "alunos"), where("turmaId", "==", turma.id));
@@ -100,63 +101,68 @@ export default function PlanilhaPage({ turma }) {
     if (confirm("Remover esse aluno?")) await deleteDoc(doc(db,"alunos",id))
   }
 
-  // Estilos inline para o tema parchment
+  // 🎨 Estilos com alto contraste e responsividade
   const styles = {
     container: {
       marginTop: "1rem",
-      fontFamily: "'Crimson Text', serif",
-      color: "#3e2e1f"
-    },
-    card: {
-      backgroundColor: "#fcf7f0",
-      borderRadius: "12px",
-      padding: "1rem",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-      border: "1px solid #e8dccc",
-      overflowX: "auto",
-      marginBottom: "1rem"
+      fontFamily: "'Crimson Text', Georgia, serif",
+      color: "#1a1a1a"
     },
     tabContainer: {
       display: "flex",
-      gap: "0.25rem",
+      gap: "0.3rem",
       padding: "0.4rem",
-      backgroundColor: "#f5ede3",
-      borderRadius: "8px",
-      marginBottom: "1rem",
-      flexWrap: "wrap"
+      background: "#ede6db",
+      borderRadius: "10px",
+      marginBottom: "1.2rem",
+      flexWrap: "wrap",
+      justifyContent: "center"
     },
     tabButton: (active) => ({
-      flex: 1,
-      padding: "0.5rem 0.2rem",
+      flex: "1 1 auto",
+      minWidth: "70px",
+      padding: "0.6rem 0.4rem",
       borderRadius: "6px",
-      border: "none",
+      border: "1px solid #b8a68b",
       cursor: "pointer",
       fontFamily: "'Playfair Display', serif",
-      fontSize: "clamp(0.7rem, 2vw, 0.9rem)",
-      fontWeight: active ? "700" : "400",
-      background: active ? "linear-gradient(135deg, #6b3f1f, #8b5a3a)" : "transparent",
-      color: active ? "#fcf7f0" : "#6b4f2e",
-      transition: "all 0.2s",
-      minWidth: "60px"
+      fontSize: "clamp(0.8rem, 2vw, 1rem)",
+      fontWeight: active ? "700" : "500",
+      background: active ? "#4a3728" : "#fcf8f2",
+      color: active ? "#fcf8f2" : "#2c1f12",
+      transition: "0.2s",
+      boxShadow: active ? "0 2px 6px rgba(0,0,0,0.2)" : "none"
     }),
+    card: {
+      background: "#fcf8f2",
+      borderRadius: "12px",
+      padding: "0.8rem 0.5rem",
+      boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+      border: "1px solid #d6c8b4",
+      overflowX: "auto",
+      marginBottom: "1.2rem"
+    },
     table: {
       width: "100%",
       borderCollapse: "collapse",
       fontFamily: "'Crimson Text', serif",
-      fontSize: "0.95rem"
+      fontSize: "0.95rem",
+      minWidth: "500px"
     },
     th: {
-      backgroundColor: "#d8c9b0",
-      color: "#2c1f12",
-      padding: "0.6rem 0.5rem",
+      background: "#d9c9b0",
+      color: "#1a1a1a",
+      padding: "0.7rem 0.5rem",
       textAlign: "left",
       fontFamily: "'Playfair Display', serif",
-      fontWeight: "600",
-      fontSize: "0.85rem"
+      fontWeight: "700",
+      fontSize: "0.9rem",
+      borderBottom: "2px solid #b8a68b"
     },
     td: {
-      padding: "0.4rem 0.5rem",
-      borderBottom: "1px solid #ece3d7"
+      padding: "0.5rem 0.4rem",
+      borderBottom: "1px solid #e3d9cb",
+      color: "#1a1a1a"
     },
     inputNota: {
       width: "4.2rem",
@@ -164,82 +170,92 @@ export default function PlanilhaPage({ turma }) {
       fontFamily: "'Playfair Display', serif",
       fontSize: "1rem",
       fontWeight: "700",
-      padding: "0.25rem 0.3rem",
-      border: "1px solid #d4c5b0",
+      padding: "0.2rem 0.2rem",
+      border: "1px solid #b8a68b",
       borderRadius: "4px",
-      background: "white"
+      background: "white",
+      color: "#1a1a1a"
     },
     inputNome: {
-      flex: 1,
-      minWidth: "180px",
-      padding: "0.6rem 0.8rem",
+      flex: "1 1 180px",
+      padding: "0.7rem 0.9rem",
       borderRadius: "8px",
-      border: "1px solid #d4c5b0",
+      border: "1px solid #b8a68b",
       fontFamily: "'Crimson Text', serif",
       fontSize: "1rem",
       backgroundColor: "white",
-      outline: "none"
+      outline: "none",
+      color: "#1a1a1a",
+      minWidth: "150px"
+    },
+    inputNomePlaceholder: {
+      color: "#6b5a4a"
     },
     btnPrimary: {
-      padding: "0.6rem 1.2rem",
+      padding: "0.7rem 1.5rem",
       borderRadius: "8px",
       border: "none",
-      backgroundColor: "#6b3f1f",
+      background: "#4a3728",
       color: "white",
-      fontWeight: "600",
+      fontWeight: "700",
       cursor: "pointer",
       fontFamily: "'Crimson Text', serif",
       fontSize: "1rem",
       whiteSpace: "nowrap",
-      transition: "background 0.2s"
+      transition: "0.2s",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
     },
     btnDanger: {
-      padding: "0.6rem 1.2rem",
+      padding: "0.7rem 1.5rem",
       borderRadius: "8px",
       border: "none",
-      backgroundColor: "#b33c3c",
+      background: "#b22234",
       color: "white",
-      fontWeight: "600",
+      fontWeight: "700",
       cursor: "pointer",
       fontFamily: "'Crimson Text', serif",
       fontSize: "1rem",
-      transition: "background 0.2s",
+      transition: "0.2s",
       display: "flex",
       alignItems: "center",
       gap: "0.5rem",
       justifyContent: "center",
-      width: "100%",
-      maxWidth: "300px"
+      flex: "1 1 200px",
+      maxWidth: "320px",
+      boxShadow: "0 2px 4px rgba(0,0,0,0.15)"
     },
     btnDangerDisabled: {
       opacity: 0.5,
       cursor: "not-allowed"
     },
     rowEven: {
-      backgroundColor: "#f8f2ea"
+      background: "#f5efe8"
     },
     rowOdd: {
-      backgroundColor: "transparent"
+      background: "transparent"
     },
     emptyRow: {
-      padding: "1.5rem",
+      padding: "1.8rem",
       textAlign: "center",
-      color: "#8a7a6a",
-      fontStyle: "italic"
+      color: "#3e2e1f",
+      fontStyle: "italic",
+      fontSize: "1rem"
     },
     deleteIcon: {
-      color: "#b33c3c",
+      color: "#b22234",
       background: "none",
       border: "none",
       cursor: "pointer",
-      fontSize: "1.1rem"
+      fontSize: "1.2rem",
+      padding: "0.2rem 0.5rem"
     },
     actionRow: {
-      marginTop: "0.75rem",
+      marginTop: "0.8rem",
       display: "flex",
-      gap: "0.5rem",
+      gap: "0.6rem",
       flexWrap: "wrap",
-      alignItems: "center"
+      alignItems: "center",
+      justifyContent: "flex-start"
     }
   }
 
@@ -258,9 +274,9 @@ export default function PlanilhaPage({ turma }) {
           <thead>
             <tr>
               <th style={styles.th}>#</th>
-              <th style={{...styles.th, textAlign: "left", minWidth: "10rem"}}>Aluno</th>
+              <th style={{...styles.th, textAlign: "left"}}>Aluno</th>
               {LABELS.map(l => (
-                <th key={l} style={{...styles.th, textAlign: "center", minWidth: "5.5rem"}}>{l}</th>
+                <th key={l} style={{...styles.th, textAlign: "center"}}>{l}</th>
               ))}
               <th style={{...styles.th, textAlign: "center", width: "3rem"}}></th>
             </tr>
@@ -272,11 +288,11 @@ export default function PlanilhaPage({ turma }) {
             {alunos.map((a, i) => {
               const rowStyle = i % 2 === 0 ? styles.rowEven : styles.rowOdd
               return (
-                <tr key={a.id} style={{...rowStyle, borderBottom: "1px solid #ece3d7"}}>
-                  <td style={{...styles.td, textAlign: "center", color: "#8a7a6a", fontSize: "0.8rem"}}>
+                <tr key={a.id} style={{...rowStyle, borderBottom: "1px solid #e3d9cb"}}>
+                  <td style={{...styles.td, textAlign: "center", color: "#4a3a2a", fontSize: "0.85rem"}}>
                     {String(i+1).padStart(2,"0")}
                   </td>
-                  <td style={{...styles.td, fontWeight: "500"}}>{a.nome}</td>
+                  <td style={{...styles.td, fontWeight: "600"}}>{a.nome}</td>
                   {CRITERIOS.map(c => {
                     const val = getVal(a.id, c)
                     return (
