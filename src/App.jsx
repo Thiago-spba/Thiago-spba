@@ -113,6 +113,9 @@ export default function App() {
         {pagina === "turmas" && <TurmasPage onSelectTurma={irPlanilha} />}
         {pagina === "planilha" && <PlanilhaPage turma={turmaSel} />}
       </main>
+      <footer style={{textAlign:"center",padding:"0.6rem 1rem",marginTop:"1rem",borderTop:"1px solid var(--border)",fontSize:"0.72rem",color:"var(--text-muted)"}}>
+        Prof. Thiago Fernando &mdash; Lic. Matemática &amp; História | Pós-grad. Metodologia de Ensino &copy; {new Date().getFullYear()}
+      </footer>
     </div>
   )
 }

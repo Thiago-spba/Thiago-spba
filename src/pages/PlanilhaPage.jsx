@@ -35,7 +35,7 @@ function limparMarkdown(t) {
 }
 
 export default function PlanilhaPage({ turma }) {
-  const [bimestre, setBimestre]             = useState("1 Bimestre")
+  const [bimestre, setBimestre]             = useState(() => localStorage.getItem(`bimestre_${turma.id}`) || "1 Bimestre")
   const [alunos, setAlunos]                 = useState([])
   const [notas, setNotas]                   = useState({})
   const [local, setLocal]                   = useState({})
@@ -54,6 +54,7 @@ export default function PlanilhaPage({ turma }) {
   const [escolaInput, setEscolaInput]       = useState("")
   const [editandoEscola, setEditandoEscola] = useState(false)
   const [apagandoTodos, setApagandoTodos]   = useState(false)
+  const [todasNotasModal, setTodasNotasModal] = useState({})
 
   useEffect(() => {
     getDoc(doc(db,"config","professor")).then(d => {
@@ -69,6 +70,10 @@ export default function PlanilhaPage({ turma }) {
       setAlunos(lista)
     })
   }, [turma.id])
+
+  useEffect(() => {
+    localStorage.setItem(`bimestre_${turma.id}`, bimestre)
+  }, [bimestre, turma.id])
 
   useEffect(() => {
     const q = query(collection(db,"notas"), where("turmaId","==",turma.id), where("trimestre","==",bimestre))
@@ -137,7 +142,7 @@ export default function PlanilhaPage({ turma }) {
   }
 
   const abrirRelatorio = async (aluno) => {
-    setModalAluno(aluno); setPalavrasChave(""); setRelTexto(""); setRelExiste(false); setRelTipo("descritiva")
+    setModalAluno(aluno); setPalavrasChave(""); setRelTexto(""); setRelExiste(false); setRelTipo("descritiva"); setTodasNotasModal({})
     const q = query(collection(db,"relatorios"), where("alunoId","==",aluno.id), where("bimestre","==",bimestre), where("tipo","==","descritiva"))
     const snap = await getDocs(q)
     if (!snap.empty) { setRelTexto(snap.docs[0].data().texto); setRelExiste(true) }
@@ -179,7 +184,7 @@ export default function PlanilhaPage({ turma }) {
 2. **NÃO INVENTE** nenhuma informação que não esteja nessas palavras-chave.
 3. Se as palavras-chave descrevem dificuldades, o relatório deve abordá-las de forma clara e objetiva.
 4. Se as palavras-chave descrevem qualidades, destaque-as.
-5. As notas (se existentes) servem apenas como contexto adicional, mas não devem ser o foco principal.
+5. Mencione as notas do aluno por bimestre de forma objetiva no relatório, citando os valores registrados.
 6. Escreva em **linguagem simples, clara e direta**, em um único parágrafo.
 7. **NÃO** use títulos, asteriscos, markdown ou listas.
 8. **NÃO** invente assinaturas ou datas – elas serão adicionadas automaticamente.
@@ -220,6 +225,7 @@ Agora, escreva o relatório.`
         tipo:relTipo,
         criadoEm:new Date().toISOString()
       })
+      setTodasNotasModal(todasNotas)
       setRelTexto(texto); setRelExiste(true)
     } catch(err) { alert("Erro: "+err.message) }
     setGerando(false)
@@ -231,16 +237,45 @@ Agora, escreva o relatório.`
 
   const gerarPDFBlob = () => {
     const pdf = new jsPDF()
-    pdf.setFillColor(232,84,10); pdf.rect(0,0,210,42,"F")
-    pdf.setTextColor(255,255,255); pdf.setFontSize(16); pdf.setFont("helvetica","bold")
-    pdf.text("Avaliação Descritiva"+(relTipo==="indisciplina"?" — Indisciplina":""),14,14)
-    pdf.setFontSize(11); pdf.setFont("helvetica","normal")
-    pdf.text(modalAluno.nome,14,24)
-    pdf.text("Turma: "+turma.nome+" | "+turma.disciplina+" | "+bimestre,14,32)
-    if (escola) { pdf.setFontSize(9); pdf.text(escola,14,39) }
-    pdf.setTextColor(0,0,0); pdf.setFontSize(11)
-    const lines = pdf.splitTextToSize(relTexto,182)
-    pdf.text(lines,14,52)
+    const dataHoje = new Date().toLocaleDateString("pt-BR")
+    const cred = credenciais(turma.tipo)
+    let curY = 14
+
+    if (escola) {
+      pdf.setFontSize(11); pdf.setFont("helvetica","bold"); pdf.setTextColor(0,0,0)
+      pdf.text(escola.toUpperCase(), 105, curY, { align:"center" })
+      curY += 10
+    }
+
+    pdf.setFillColor(232,84,10); pdf.rect(0,curY,210,30,"F")
+    pdf.setTextColor(255,255,255); pdf.setFontSize(13); pdf.setFont("helvetica","bold")
+    pdf.text("Avaliação Descritiva"+(relTipo==="indisciplina"?" — Indisciplina":""), 105, curY+10, {align:"center"})
+    pdf.setFontSize(9); pdf.setFont("helvetica","normal")
+    pdf.text("Aluno: "+modalAluno.nome+"  |  Turma: "+turma.nome+"  |  "+turma.disciplina, 105, curY+19, {align:"center"})
+    pdf.text(bimestre+"  |  "+dataHoje, 105, curY+26, {align:"center"})
+    curY += 36
+
+    const notasRows = Object.entries(todasNotasModal).length > 0
+      ? Object.entries(todasNotasModal).map(([b,n]) => [b, n.atividades||"—", n.participacao||"—", n.comportamento||"—"])
+      : [[bimestre, notas[modalAluno.id]?.atividades||"—", notas[modalAluno.id]?.participacao||"—", notas[modalAluno.id]?.comportamento||"—"]]
+    autoTable(pdf, {
+      startY: curY,
+      head: [["Bimestre","Atividades","Participação","Comportamento"]],
+      body: notasRows,
+      styles: { fontSize:8, cellPadding:2, halign:"center" },
+      headStyles: { fillColor:[232,84,10], textColor:255, fontStyle:"bold", halign:"center" },
+      margin: { left:14, right:14 }, tableWidth:"wrap"
+    })
+    curY = pdf.lastAutoTable.finalY + 8
+
+    pdf.setFontSize(11); pdf.setFont("helvetica","normal"); pdf.setTextColor(0,0,0)
+    const lines = pdf.splitTextToSize(relTexto, 182)
+    pdf.text(lines, 14, curY)
+    curY += lines.length * 6 + 12
+
+    pdf.setFontSize(9); pdf.setFont("helvetica","italic"); pdf.setTextColor(80,80,80)
+    pdf.text("Prof. Thiago Fernando — "+cred, 14, curY)
+
     return pdf
   }
 
