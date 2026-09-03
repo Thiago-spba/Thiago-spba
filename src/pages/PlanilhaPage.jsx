@@ -319,59 +319,83 @@ Agora, escreva o relatório.`
     const cred = listaFormacao === "tecnica"
       ? "Graduando em Engenharia de Computação, Licenciado em Matemática"
       : "Licenciado em História, Pós-graduado em Metodologia de Ensino"
+    const pageW = 297; const pageH = 210; const mL = 15; const mR = 15
     let curY = 12
+
     if (escola) {
-      pdf.setFontSize(11); pdf.setFont("helvetica","bold"); pdf.setTextColor(0,0,0)
-      pdf.text(escola.toUpperCase(), 148.5, curY, {align:"center"})
-      curY += 7
+      pdf.setFontSize(12); pdf.setFont("helvetica","bold"); pdf.setTextColor(0,0,0)
+      pdf.text(escola.toUpperCase(), pageW/2, curY, {align:"center"})
+      curY += 5
+      pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.3)
+      pdf.line(mL, curY, pageW-mR, curY)
+      curY += 5
     }
-    pdf.setFontSize(10); pdf.setFont("helvetica","bold"); pdf.setTextColor(0,0,0)
-    pdf.text("DIÁRIO DE CLASSE — "+bimestre.toUpperCase(), 148.5, curY, {align:"center"})
-    curY += 5
-    pdf.setFontSize(9); pdf.setFont("helvetica","normal")
-    pdf.text("Turma: "+turma.nome+"  |  Disciplina: "+turma.disciplina+"  |  Data: "+dataHoje, 148.5, curY, {align:"center"})
-    curY += 4
-    pdf.setDrawColor(232,84,10); pdf.setLineWidth(0.5)
-    pdf.line(14, curY, 283, curY)
-    curY += 4
+    pdf.setFontSize(11); pdf.setFont("helvetica","bold"); pdf.setTextColor(0,0,0)
+    pdf.text("DIÁRIO DE CLASSE", pageW/2, curY, {align:"center"})
+    curY += 7
+
+    const fH = 7; let fX = mL
+    const campos = [
+      {l:"PROFESSOR:", v:"Prof. Thiago Fernando", w:65},
+      {l:"DISCIPLINA:", v:turma.disciplina, w:82},
+      {l:"TURMA:", v:turma.nome, w:25},
+      {l:"BIMESTRE:", v:bimestre, w:40},
+      {l:"DATA:", v:dataHoje, w:55}
+    ]
+    pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.2)
+    campos.forEach(f => {
+      pdf.rect(fX,curY,f.w,fH)
+      pdf.setFont("helvetica","bold"); pdf.setFontSize(6)
+      pdf.text(f.l, fX+1.5, curY+2.5)
+      pdf.setFont("helvetica","normal"); pdf.setFontSize(8)
+      pdf.text(String(f.v||""), fX+1.5, curY+6)
+      fX += f.w
+    })
+    curY += fH + 3
+
     autoTable(pdf, {
       startY: curY,
-      head: [["#","Nome do Aluno","Atividades","Participação","Comportamento","Observação"]],
+      head: [["Nº","Nome do Aluno","Atividades","Participação","Comportamento","Observação"]],
       body: alunos.map((a,i) => [
         String(i+1).padStart(2,"0"), a.nome,
-        notas[a.id]?.atividades ?? "—",
-        notas[a.id]?.participacao ?? "—",
-        notas[a.id]?.comportamento ?? "—",
-        a.obs || ""
+        notas[a.id]?.atividades||"",
+        notas[a.id]?.participacao||"",
+        notas[a.id]?.comportamento||"",
+        a.obs||""
       ]),
-      styles: {fontSize:8.5, cellPadding:2},
-      headStyles: {fillColor:[232,84,10],textColor:255,fontStyle:"bold",halign:"center",fontSize:8.5},
-      columnStyles: {
-        0:{halign:"center",cellWidth:10},
-        1:{cellWidth:85},
-        2:{halign:"center",cellWidth:25},
-        3:{halign:"center",cellWidth:25},
-        4:{halign:"center",cellWidth:25},
+      theme:"grid",
+      styles:{fontSize:8, cellPadding:1.5, textColor:[0,0,0], lineColor:[180,180,180], lineWidth:0.15},
+      headStyles:{fillColor:[232,84,10], textColor:[255,255,255], fontStyle:"bold", halign:"center", fontSize:8.5, cellPadding:2},
+      columnStyles:{
+        0:{halign:"center", cellWidth:10},
+        1:{cellWidth:90},
+        2:{halign:"center", cellWidth:27},
+        3:{halign:"center", cellWidth:27},
+        4:{halign:"center", cellWidth:27},
         5:{cellWidth:"auto"}
       },
-      alternateRowStyles:{fillColor:[249,250,251]},
-      margin:{left:14,right:14}
+      alternateRowStyles:{fillColor:[248,248,248]},
+      margin:{left:mL, right:mR}
     })
+
     const totalPags = pdf.internal.getNumberOfPages()
     for (let i = 1; i <= totalPags; i++) {
       pdf.setPage(i)
-      pdf.setFontSize(7); pdf.setTextColor(150,150,150)
-      pdf.text("Página "+i+" / "+totalPags, 283-14, 204, {align:"right"})
+      pdf.setFontSize(7); pdf.setTextColor(130,130,130); pdf.setFont("helvetica","normal")
+      pdf.text("Página "+i+" / "+totalPags, pageW/2, pageH-4, {align:"center"})
     }
-    pdf.setPage(totalPags)
-    curY = pdf.lastAutoTable.finalY + 10
-    if (curY > 190) { pdf.addPage("landscape"); curY = 14 }
-    pdf.setFontSize(9); pdf.setFont("helvetica","normal"); pdf.setTextColor(0,0,0)
+    pdf.setPage(totalPags); pdf.setTextColor(0,0,0)
+    curY = pdf.lastAutoTable.finalY + 8
+    if (curY + 22 > pageH - 8) { pdf.addPage("landscape"); pdf.setPage(pdf.internal.getNumberOfPages()); curY = 14 }
+    pdf.setFontSize(8.5); pdf.setFont("helvetica","normal")
     pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.3)
-    pdf.line(14, curY, 80, curY)
-    pdf.text("Prof. Thiago Fernando", 14, curY+4)
-    pdf.text(cred, 14, curY+9)
-    pdf.text("Data: "+dataHoje, 14, curY+14)
+    pdf.line(mL, curY, mL+80, curY)
+    pdf.text("Prof. Thiago Fernando", mL, curY+4)
+    pdf.text(cred, mL, curY+9)
+    pdf.setLineWidth(0.2)
+    pdf.rect(pageW-mR-48, curY-3, 48, 18)
+    pdf.setFontSize(7); pdf.setTextColor(150,150,150)
+    pdf.text("Visto / Carimbo", pageW-mR-24, curY+5, {align:"center"})
     return pdf
   }
 
