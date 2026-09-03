@@ -560,8 +560,7 @@ Agora, escreva o relatório.`
           <button className="btn-primary" onClick={()=>setMenu(!menu)} style={{display:"flex",alignItems:"center",gap:"0.5rem"}}>☰ Ações</button>
           {menu && (
             <div style={{position:"absolute",top:"110%",left:0,background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:"10px",boxShadow:"0 4px 16px rgba(0,0,0,0.15)",zIndex:100,minWidth:"210px",overflow:"hidden"}}>
-              <button style={btnMenu} onClick={exportarPDF}>📄 Exportar PDF</button>
-              <button style={btnMenu} onClick={exportarExcel}>📊 Exportar Excel</button>
+                            <button style={btnMenu} onClick={exportarExcel}>📊 Exportar Excel</button>
               <button style={btnMenu} onClick={()=>{setImportando(true);setMenu(false)}}>📥 Importar Lista (PDF / Excel)</button>
               <button style={btnMenu} onClick={()=>{setEditandoEscola(true);setMenu(false)}}>🏫 {escola||"Definir Escola"}</button>
               <button style={{...btnMenu,borderBottom:"none"}} onClick={()=>{setModalListaPDF(true);setMenu(false)}}>📤 Compartilhar Lista — {bimestre}</button>
