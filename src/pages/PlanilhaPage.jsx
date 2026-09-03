@@ -55,6 +55,8 @@ export default function PlanilhaPage({ turma }) {
   const [editandoEscola, setEditandoEscola] = useState(false)
   const [apagandoTodos, setApagandoTodos]   = useState(false)
   const [todasNotasModal, setTodasNotasModal] = useState({})
+  const [modalListaPDF, setModalListaPDF]   = useState(false)
+  const [listaFormacao, setListaFormacao]   = useState("tecnica")
 
   useEffect(() => {
     getDoc(doc(db,"config","professor")).then(d => {
@@ -311,6 +313,84 @@ Agora, escreva o relatório.`
     XLSX.writeFile(wb,turma.nome+"_"+bimestre+".xlsx"); setMenu(false)
   }
 
+  const gerarListaAbnt = () => {
+    const pdf = new jsPDF("landscape","mm","a4")
+    const dataHoje = new Date().toLocaleDateString("pt-BR")
+    const cred = listaFormacao === "tecnica"
+      ? "Graduando em Engenharia de Computação, Licenciado em Matemática"
+      : "Licenciado em História, Pós-graduado em Metodologia de Ensino"
+    let curY = 12
+    if (escola) {
+      pdf.setFontSize(11); pdf.setFont("helvetica","bold"); pdf.setTextColor(0,0,0)
+      pdf.text(escola.toUpperCase(), 148.5, curY, {align:"center"})
+      curY += 7
+    }
+    pdf.setFontSize(10); pdf.setFont("helvetica","bold"); pdf.setTextColor(0,0,0)
+    pdf.text("DIÁRIO DE CLASSE — "+bimestre.toUpperCase(), 148.5, curY, {align:"center"})
+    curY += 5
+    pdf.setFontSize(9); pdf.setFont("helvetica","normal")
+    pdf.text("Turma: "+turma.nome+"  |  Disciplina: "+turma.disciplina+"  |  Data: "+dataHoje, 148.5, curY, {align:"center"})
+    curY += 4
+    pdf.setDrawColor(232,84,10); pdf.setLineWidth(0.5)
+    pdf.line(14, curY, 283, curY)
+    curY += 4
+    autoTable(pdf, {
+      startY: curY,
+      head: [["#","Nome do Aluno","Atividades","Participação","Comportamento","Observação"]],
+      body: alunos.map((a,i) => [
+        String(i+1).padStart(2,"0"), a.nome,
+        notas[a.id]?.atividades ?? "—",
+        notas[a.id]?.participacao ?? "—",
+        notas[a.id]?.comportamento ?? "—",
+        a.obs || ""
+      ]),
+      styles: {fontSize:8.5, cellPadding:2},
+      headStyles: {fillColor:[232,84,10],textColor:255,fontStyle:"bold",halign:"center",fontSize:8.5},
+      columnStyles: {
+        0:{halign:"center",cellWidth:10},
+        1:{cellWidth:85},
+        2:{halign:"center",cellWidth:25},
+        3:{halign:"center",cellWidth:25},
+        4:{halign:"center",cellWidth:25},
+        5:{cellWidth:"auto"}
+      },
+      alternateRowStyles:{fillColor:[249,250,251]},
+      margin:{left:14,right:14}
+    })
+    const totalPags = pdf.internal.getNumberOfPages()
+    for (let i = 1; i <= totalPags; i++) {
+      pdf.setPage(i)
+      pdf.setFontSize(7); pdf.setTextColor(150,150,150)
+      pdf.text("Página "+i+" / "+totalPags, 283-14, 204, {align:"right"})
+    }
+    pdf.setPage(totalPags)
+    curY = pdf.lastAutoTable.finalY + 10
+    if (curY > 190) { pdf.addPage("landscape"); curY = 14 }
+    pdf.setFontSize(9); pdf.setFont("helvetica","normal"); pdf.setTextColor(0,0,0)
+    pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.3)
+    pdf.line(14, curY, 80, curY)
+    pdf.text("Prof. Thiago Fernando", 14, curY+4)
+    pdf.text(cred, 14, curY+9)
+    pdf.text("Data: "+dataHoje, 14, curY+14)
+    return pdf
+  }
+
+  const compartilharListaPDF = () => {
+    const pdf = gerarListaAbnt()
+    pdf.save("Lista_"+turma.nome+"_"+bimestre.replace(/ /g,"_")+".pdf")
+    setModalListaPDF(false)
+  }
+
+  const whatsappListaPDF = () => {
+    const pdf = gerarListaAbnt()
+    pdf.save("Lista_"+turma.nome+"_"+bimestre.replace(/ /g,"_")+".pdf")
+    setTimeout(() => {
+      const msg = "Lista de notas — "+turma.nome+" ("+turma.disciplina+") — "+bimestre
+      window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank")
+    }, 900)
+    setModalListaPDF(false)
+  }
+
   const extrairNomesExcel = (rows) => {
     let headerRowIndex = -1;
     let nomeColIndex = -1;
@@ -459,7 +539,8 @@ Agora, escreva o relatório.`
               <button style={btnMenu} onClick={exportarPDF}>📄 Exportar PDF</button>
               <button style={btnMenu} onClick={exportarExcel}>📊 Exportar Excel</button>
               <button style={btnMenu} onClick={()=>{setImportando(true);setMenu(false)}}>📥 Importar Lista (PDF / Excel)</button>
-              <button style={{...btnMenu,borderBottom:"none"}} onClick={()=>{setEditandoEscola(true);setMenu(false)}}>🏫 {escola||"Definir Escola"}</button>
+              <button style={btnMenu} onClick={()=>{setEditandoEscola(true);setMenu(false)}}>🏫 {escola||"Definir Escola"}</button>
+              <button style={{...btnMenu,borderBottom:"none"}} onClick={()=>{setModalListaPDF(true);setMenu(false)}}>📤 Compartilhar Lista — {bimestre}</button>
             </div>
           )}
         </div>
@@ -496,6 +577,36 @@ Agora, escreva o relatório.`
               <button className="btn-primary" onClick={salvarEscola} style={{flex:1}}>Salvar</button>
               <button className="btn-ghost" onClick={()=>setEditandoEscola(false)} style={{flex:1}}>Cancelar</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {modalListaPDF && (
+        <div style={overlay}>
+          <div style={{...modal,maxWidth:"420px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
+              <h3 style={{fontWeight:"700",color:"var(--text)"}}>📤 Compartilhar Lista</h3>
+              <button onClick={()=>setModalListaPDF(false)} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:"1.2rem"}}>✕</button>
+            </div>
+            <div style={{background:"var(--bg)",borderRadius:"8px",padding:"0.75rem",marginBottom:"1rem",fontSize:"0.85rem"}}>
+              <p><strong style={{color:"var(--text)"}}>{turma.nome}</strong> — {turma.disciplina}</p>
+              {escola && <p style={{marginTop:"0.25rem",color:"var(--text-muted)"}}>{escola}</p>}
+              <p style={{marginTop:"0.25rem",color:"var(--text-muted)"}}>{alunos.length} alunos | {bimestre}</p>
+            </div>
+            <p style={{fontSize:"0.85rem",fontWeight:"600",color:"var(--text)",marginBottom:"0.5rem"}}>Área de formação:</p>
+            <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem"}}>
+              <button onClick={()=>setListaFormacao("tecnica")} style={{flex:1,padding:"0.6rem",borderRadius:"8px",border:"2px solid",borderColor:listaFormacao==="tecnica"?"var(--accent)":"var(--border)",background:listaFormacao==="tecnica"?"var(--accent-light)":"transparent",color:listaFormacao==="tecnica"?"var(--accent)":"var(--text-muted)",fontWeight:"600",cursor:"pointer",fontSize:"0.8rem"}}>
+                💻 Tecnológica
+              </button>
+              <button onClick={()=>setListaFormacao("humanas")} style={{flex:1,padding:"0.6rem",borderRadius:"8px",border:"2px solid",borderColor:listaFormacao==="humanas"?"var(--accent)":"var(--border)",background:listaFormacao==="humanas"?"var(--accent-light)":"transparent",color:listaFormacao==="humanas"?"var(--accent)":"var(--text-muted)",fontWeight:"600",cursor:"pointer",fontSize:"0.8rem"}}>
+                📚 Humanas
+              </button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem",marginBottom:"0.5rem"}}>
+              <button className="btn-primary" onClick={compartilharListaPDF} style={{fontSize:"0.85rem"}}>📄 Baixar PDF</button>
+              <button onClick={whatsappListaPDF} style={{background:"#128C7E",color:"white",border:"none",borderRadius:"8px",padding:"0.6rem",cursor:"pointer",fontSize:"0.85rem",fontWeight:"600"}}>📱 WhatsApp + PDF</button>
+            </div>
+            <button className="btn-ghost" onClick={()=>setModalListaPDF(false)} style={{width:"100%",fontSize:"0.85rem"}}>Cancelar</button>
           </div>
         </div>
       )}
