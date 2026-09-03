@@ -54,3 +54,15 @@ textarea{background:var(--bg-card);color:var(--text);border:1px solid var(--bord
   .hero-card { padding: 1rem !important; }
   .hero-card h1 { font-size: 1.25rem !important; }
 }
+
+.thead-sticky th {
+  position: sticky;
+  top: 60px;
+  background: var(--bg-card);
+  z-index: 5;
+  border-bottom: 2px solid var(--border);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.07);
+}
+@media (max-width: 640px) {
+  .thead-sticky th { top: 52px; }
+}

@@ -582,8 +582,8 @@ Agora, escreva o relatório.`
 
       <div className="card" style={{overflowX:"auto",marginBottom:"1rem"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:"0.9rem"}}>
-          <thead>
-            <tr style={{borderBottom:"2px solid var(--border)"}}>
+          <thead className="thead-sticky">
+            <tr>
               <th style={{padding:"0.75rem 0.5rem",textAlign:"left",color:"var(--text-muted)",fontWeight:"600",fontSize:"0.75rem",textTransform:"uppercase"}}>#</th>
               <th style={{padding:"0.75rem 0.5rem",textAlign:"left",color:"var(--text-muted)",fontWeight:"600",fontSize:"0.75rem",textTransform:"uppercase",minWidth:"10rem"}}>Aluno</th>
               {LABELS.map(l=><th key={l} style={{padding:"0.75rem 0.5rem",textAlign:"center",color:"var(--text-muted)",fontWeight:"600",fontSize:"0.75rem",textTransform:"uppercase",minWidth:"5.5rem"}}>{l}</th>)}
