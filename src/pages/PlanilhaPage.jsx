@@ -542,7 +542,15 @@ Agora, escreva o relatório.`
   };
 
   const confirmarImport = async () => {
-    for (const n of nomesEditados.filter(n=>n.trim().length>2)) await addDoc(collection(db,"alunos"),{nome:n.trim(),turmaId:turma.id,obs:""})
+    const existentes = new Set(alunos.map(a => a.nome.trim().toLowerCase()))
+    const novos = nomesEditados.filter(n => n.trim().length > 2 && !existentes.has(n.trim().toLowerCase()))
+    if (novos.length === 0) {
+      alert("Nenhum aluno novo — todos ja existem nesta turma.")
+      setNomesEditados([]); setImportando(false)
+      return
+    }
+    for (const n of novos) await addDoc(collection(db,"alunos"),{nome:n.trim(),turmaId:turma.id,obs:""})
+    alert(novos.length + " alunos importados com sucesso!")
     setNomesEditados([]); setImportando(false)
   }
 
