@@ -49,6 +49,10 @@ export default function PlanilhaPage({ turma }) {
   const [palavrasChave, setPalavrasChave]   = useState("")
   const [relTexto, setRelTexto]             = useState("")
   const [relExiste, setRelExiste]           = useState(false)
+  const [relTextoDescritiva, setRelTextoDescritiva]     = useState("")
+  const [relTextoIndisciplina, setRelTextoIndisciplina] = useState("")
+  const [relExisteDescritiva, setRelExisteDescritiva]   = useState(false)
+  const [relExisteIndisciplina, setRelExisteIndisciplina] = useState(false)
   const [gerando, setGerando]               = useState(false)
   const [escola, setEscola]                 = useState("")
   const [escolaInput, setEscolaInput]       = useState("")
@@ -145,9 +149,13 @@ export default function PlanilhaPage({ turma }) {
 
   const abrirRelatorio = async (aluno) => {
     setModalAluno(aluno); setPalavrasChave(""); setRelTexto(""); setRelExiste(false); setRelTipo("descritiva"); setTodasNotasModal({})
-    const q = query(collection(db,"relatorios"), where("alunoId","==",aluno.id), where("bimestre","==",bimestre), where("tipo","==","descritiva"))
-    const snap = await getDocs(q)
-    if (!snap.empty) { setRelTexto(snap.docs[0].data().texto); setRelExiste(true) }
+    setRelTextoDescritiva(""); setRelTextoIndisciplina(""); setRelExisteDescritiva(false); setRelExisteIndisciplina(false)
+    const qD = query(collection(db,"relatorios"), where("alunoId","==",aluno.id), where("bimestre","==",bimestre), where("tipo","==","descritiva"))
+    const snapD = await getDocs(qD)
+    const qI = query(collection(db,"relatorios"), where("alunoId","==",aluno.id), where("bimestre","==",bimestre), where("tipo","==","indisciplina"))
+    const snapI = await getDocs(qI)
+    if (!snapD.empty) { setRelTextoDescritiva(snapD.docs[0].data().texto); setRelExisteDescritiva(true); setRelTexto(snapD.docs[0].data().texto); setRelExiste(true) }
+    if (!snapI.empty) { setRelTextoIndisciplina(snapI.docs[0].data().texto); setRelExisteIndisciplina(true) }
   }
 
   const gerarRelatorio = async () => {
@@ -228,6 +236,8 @@ Agora, escreva o relatório.`
         criadoEm:new Date().toISOString()
       })
       setTodasNotasModal(todasNotas)
+      if (relTipo === "descritiva") { setRelTextoDescritiva(texto); setRelExisteDescritiva(true) }
+      else { setRelTextoIndisciplina(texto); setRelExisteIndisciplina(true) }
       setRelTexto(texto); setRelExiste(true)
     } catch(err) { alert("Erro: "+err.message) }
     setGerando(false)
@@ -677,13 +687,13 @@ Agora, escreva o relatório.`
                 <h3 style={{fontWeight:"700",color:"var(--text)"}}>Avaliação Descritiva</h3>
                 <p style={{fontSize:"0.8rem",color:"var(--text-muted)"}}>{modalAluno.nome} | {turma.nome} | {bimestre}</p>
               </div>
-              <button onClick={()=>{setModalAluno(null);setRelTexto("")}} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:"1.2rem"}}>✕</button>
+              <button onClick={()=>{setModalAluno(null);setRelTexto("");setRelTextoDescritiva("");setRelTextoIndisciplina("");setRelExiste(false);setRelExisteDescritiva(false);setRelExisteIndisciplina(false)}} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:"1.2rem"}}>✕</button>
             </div>
             {!relExiste && (
               <div style={{marginBottom:"1rem"}}>
                 <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>
-                  <button onClick={()=>setRelTipo("descritiva")} className={relTipo==="descritiva"?"btn-primary":"btn-ghost"} style={{flex:1,fontSize:"0.85rem"}}>📝 Padrão</button>
-                  <button onClick={()=>setRelTipo("indisciplina")} style={{flex:1,fontSize:"0.85rem",border:"none",borderRadius:"8px",padding:"0.6rem",cursor:"pointer",fontWeight:"600",background:relTipo==="indisciplina"?"#DC2626":"transparent",color:relTipo==="indisciplina"?"white":"#DC2626",border:relTipo==="indisciplina"?"none":"1px solid #DC2626"}}>⚠️ Indisciplina</button>
+                  <button onClick={()=>{setRelTipo("descritiva");setRelTexto(relTextoDescritiva);setRelExiste(relExisteDescritiva)}} className={relTipo==="descritiva"?"btn-primary":"btn-ghost"} style={{flex:1,fontSize:"0.85rem"}}>📝 Padrão</button>
+                  <button onClick={()=>{setRelTipo("indisciplina");setRelTexto(relTextoIndisciplina);setRelExiste(relExisteIndisciplina)}} style={{flex:1,fontSize:"0.85rem",border:"none",borderRadius:"8px",padding:"0.6rem",cursor:"pointer",fontWeight:"600",background:relTipo==="indisciplina"?"#DC2626":"transparent",color:relTipo==="indisciplina"?"white":"#DC2626",border:relTipo==="indisciplina"?"none":"1px solid #DC2626"}}>⚠️ Indisciplina</button>
                 </div>
                 <label style={{fontSize:"0.85rem",fontWeight:"600",color:"var(--text)",display:"block",marginBottom:"0.4rem"}}>
                   Palavras-chave / referências:
