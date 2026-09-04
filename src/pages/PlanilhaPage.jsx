@@ -714,7 +714,7 @@ Agora, escreva o relatório.`
         </div>
       )}
 
-      <div className="card" style={{overflowX:"auto",marginBottom:"1rem"}}>
+      <div className="card" style={{overflow:"auto",maxHeight:"calc(100vh - 150px)",marginBottom:"1rem"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:"0.9rem"}}>
           <thead className="thead-sticky">
             <tr>
