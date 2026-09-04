@@ -35,7 +35,7 @@ function CircleCard({ turma, color, onSelect, onDelete, animDelay }) {
           onClick={e=>{e.stopPropagation();onDelete(turma.id)}}
           style={{fontSize:11,color:'#DC2626',background:'none',border:'none',cursor:'pointer',
             marginTop:4,opacity:hov?1:0,transition:'opacity .15s',display:'block',margin:'4px auto 0'}}
-        >âœ• remover</button>
+        >✕ remover</button>
       </div>
     </div>
   )
@@ -49,7 +49,7 @@ function Section({ title, icon, turmas, colors, onSelect, onDelete, onAdd }) {
           <span style={{fontSize:18}}>{icon}</span>
           <span style={{fontWeight:700,fontSize:'1rem',color:'var(--text)'}}>{title}</span>
           <span style={{fontSize:'0.8rem',color:'var(--text-muted)'}}>
-            Â· {turmas.length} turma{turmas.length!==1?'s':''}
+            · {turmas.length} turma{turmas.length!==1?'s':''}
           </span>
         </div>
         <button
@@ -60,7 +60,7 @@ function Section({ title, icon, turmas, colors, onSelect, onDelete, onAdd }) {
             boxShadow:'0 4px 12px rgba(232,84,10,0.3)'}}
           onMouseEnter={e=>e.currentTarget.style.transform='scale(1.12)'}
           onMouseLeave={e=>e.currentTarget.style.transform='scale(1)'}
-          title={`Nova turma â€” ${title}`}
+          title={`Nova turma — ${title}`}
         >+</button>
       </div>
       {turmas.length===0
@@ -103,8 +103,7 @@ export default function TurmasPage({ onSelectTurma }) {
 
   const overlay = {position:"fixed",inset:0,background:"rgba(0,0,0,0.55)",zIndex:200,
     display:"flex",alignItems:"center",justifyContent:"center",padding:"1rem"}
-  const modal   = {background:"var(--bg-card)",borderRadius:16,padding:"1.5rem",
-    maxWidth:380,width:"100%"}
+  const modal   = {background:"var(--bg-card)",borderRadius:16,padding:"1.5rem",maxWidth:380,width:"100%"}
 
   const turmasHum = turmas.filter(t => t.tipo !== "tecnica")
   const turmasTec = turmas.filter(t => t.tipo === "tecnica")
@@ -121,13 +120,13 @@ export default function TurmasPage({ onSelectTurma }) {
           <h1 style={{fontSize:"clamp(1rem,4vw,1.3rem)",fontWeight:800,
             margin:"0 0 0.2rem",color:"var(--text)"}}>Prof. Thiago Fernando</h1>
           <p style={{color:"var(--text-muted)",fontSize:"0.85rem",fontStyle:"italic"}}>
-            "A histÃ³ria explica de onde viemos; a tecnologia programa o seu futuro."
+            "A história explica de onde viemos; a tecnologia programa o seu futuro."
           </p>
         </div>
       </div>
 
       <Section
-        title="FormaÃ§Ã£o BÃ¡sica Geral" icon="ðŸ“š"
+        title="Formação Básica Geral" icon="📚"
         turmas={turmasHum} colors={CORES_HUM}
         onSelect={onSelectTurma} onDelete={remover}
         onAdd={()=>{ setTipo("basica"); setForm(true) }}
@@ -136,7 +135,7 @@ export default function TurmasPage({ onSelectTurma }) {
       <div style={{height:'1px',background:'var(--border)',margin:'1.75rem 0'}} />
 
       <Section
-        title="FormaÃ§Ã£o TÃ©cnica Profissional" icon="ðŸ’»"
+        title="Formação Técnica Profissional" icon="💻"
         turmas={turmasTec} colors={CORES_TEC}
         onSelect={onSelectTurma} onDelete={remover}
         onAdd={()=>{ setTipo("tecnica"); setForm(true) }}
@@ -147,8 +146,8 @@ export default function TurmasPage({ onSelectTurma }) {
           <div style={modal}>
             <h3 style={{fontWeight:700,color:"var(--text)",marginBottom:"1rem"}}>
               {tipo==="tecnica"
-                ? "ðŸ’» Nova turma â€” FormaÃ§Ã£o TÃ©cnica"
-                : "ðŸ“š Nova turma â€” FormaÃ§Ã£o BÃ¡sica"}
+                ? "💻 Nova turma — Formação Técnica"
+                : "📚 Nova turma — Formação Básica"}
             </h3>
             <input className="input-modern" value={nome}
               onChange={e=>setNome(e.target.value)}
@@ -157,7 +156,7 @@ export default function TurmasPage({ onSelectTurma }) {
               onKeyDown={e=>e.key==="Enter"&&adicionar()} autoFocus />
             <input className="input-modern" value={disciplina}
               onChange={e=>setDisciplina(e.target.value)}
-              placeholder="Disciplina (ex: HistÃ³ria)"
+              placeholder="Disciplina (ex: História)"
               style={{marginBottom:"1rem"}}
               onKeyDown={e=>e.key==="Enter"&&adicionar()} />
             <div style={{display:"flex",gap:".5rem"}}>
