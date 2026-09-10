@@ -82,6 +82,8 @@ export default function PlanilhaPage({ turma }) {
   const [escolaInput, setEscolaInput]       = useState("")
   const [editandoEscola, setEditandoEscola] = useState(false)
   const [apagandoTodos, setApagandoTodos]   = useState(false)
+  const [importTipo, setImportTipo]         = useState("arquivo") // "arquivo" | "texto"
+  const [importTexto, setImportTexto]       = useState("")
   // Sincronização
   const [sincModal, setSincModal]           = useState(false)
   const [sincPasso, setSincPasso]           = useState(1)
@@ -524,9 +526,34 @@ Agora, escreva o relatório.`
     setCarregando(false);
   };
 
+  const processarTextoImport = async () => {
+    if (!importTexto.trim()) return
+    setCarregando(true)
+    try {
+      const resp = await fetch("/api/chat", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+          prompt: `Extraia apenas os nomes completos de alunos deste texto. Ignore qualquer linha que contenha status como "Aluno ativo", "Aluno inativo", cabeçalhos, números de matrícula, datas, títulos de colunas ou qualquer informação que não seja um nome de pessoa. Retorne estritamente um nome por linha, sem numeração, sem marcadores, sem explicações, sem linhas em branco.\n\n${importTexto}`,
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 2000
+        })
+      })
+      const data = await resp.json()
+      if (data.error) throw new Error(data.error)
+      const nomes = (data.texto || "")
+        .split(/\r?\n/)
+        .map(n => n.trim().replace(/^[-*•\d.)]+\s*/,""))
+        .filter(n => n.length > 2 && /[a-zA-ZÀ-ÿ]/.test(n))
+      if (nomes.length === 0) { alert("A IA não encontrou nomes no texto. Tente colar mais linhas ou verifique o conteúdo."); setCarregando(false); return }
+      setNomesEditados(nomes)
+    } catch(err) { alert("Erro: "+err.message) }
+    setCarregando(false)
+  }
+
   const confirmarImport = async () => {
     for (const n of nomesEditados.filter(n=>n.trim().length>2)) await addDoc(collection(db,"alunos"),{nome:n.trim(),turmaId:turma.id,obs:""})
-    setNomesEditados([]); setImportando(false)
+    setNomesEditados([]); setImportando(false); setImportTexto("")
   }
 
   const btnMenu = {width:"100%",padding:"0.75rem 1rem",textAlign:"left",background:"none",border:"none",cursor:"pointer",color:"var(--text)",fontSize:"0.9rem",borderBottom:"1px solid var(--border)"}
@@ -591,26 +618,93 @@ Agora, escreva o relatório.`
       {importando && (
         <div style={overlay}>
           <div style={modal}>
-            <h3 style={{fontWeight:"700",marginBottom:"0.5rem",color:"var(--text)"}}>📥 Importar Lista de Alunos</h3>
-            <p style={{fontSize:"0.85rem",color:"var(--text-muted)",marginBottom:"1rem"}}>Envie o PDF da Plataforma do Futuro ou sua Planilha Excel (.xlsx, .xls, .csv). Os nomes serão extraídos para sua revisão.</p>
-            <input type="file" accept=".pdf,.xlsx,.xls,.csv" onChange={handleArquivo} style={{width:"100%",marginBottom:"1rem",color:"var(--text)"}} />
-            {carregando && <p style={{color:"var(--accent)",fontWeight:"600",marginBottom:"1rem"}}>⏳ Extraindo nomes com IA...</p>}
-            {nomesEditados.length>0 && (
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
+              <h3 style={{fontWeight:"700",color:"var(--text)"}}>📥 Importar Lista de Alunos</h3>
+              <button onClick={()=>{setImportando(false);setNomesEditados([]);setImportTexto("")}} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:"1.2rem"}}>✕</button>
+            </div>
+
+            {/* Abas Arquivo / Texto */}
+            {nomesEditados.length === 0 && (
+              <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>
+                {[["arquivo","📁 Arquivo (PDF/Excel)"],["texto","📋 Colar Texto"]].map(([k,label])=>(
+                  <button key={k} onClick={()=>setImportTipo(k)} style={{
+                    flex:1, padding:"0.5rem", borderRadius:"8px", fontWeight:"600", fontSize:"0.82rem",
+                    cursor:"pointer", border:"2px solid",
+                    borderColor: importTipo===k ? "var(--accent)" : "var(--border)",
+                    background: importTipo===k ? "var(--accent-light)" : "var(--bg-card)",
+                    color: importTipo===k ? "var(--accent)" : "var(--text-muted)"
+                  }}>{label}</button>
+                ))}
+              </div>
+            )}
+
+            {/* Modo Arquivo */}
+            {importTipo === "arquivo" && nomesEditados.length === 0 && (
               <div>
-                <p style={{fontWeight:"600",marginBottom:"0.5rem",color:"var(--text)"}}>{nomesEditados.length} alunos encontrados — edite se necessário:</p>
-                <div style={{maxHeight:"200px",overflowY:"auto",border:"1px solid var(--border)",borderRadius:"8px",padding:"0.5rem",marginBottom:"1rem",display:"flex",flexDirection:"column",gap:"0.35rem"}}>
+                <p style={{fontSize:"0.85rem",color:"var(--text-muted)",marginBottom:"0.75rem"}}>
+                  Envie o PDF ou planilha Excel (.xlsx, .xls, .csv). Os nomes serão extraídos para revisão.
+                </p>
+                <input type="file" accept=".pdf,.xlsx,.xls,.csv" onChange={handleArquivo}
+                  style={{width:"100%",marginBottom:"1rem",color:"var(--text)"}} />
+              </div>
+            )}
+
+            {/* Modo Texto */}
+            {importTipo === "texto" && nomesEditados.length === 0 && (
+              <div>
+                <p style={{fontSize:"0.85rem",color:"var(--text-muted)",marginBottom:"0.75rem"}}>
+                  Cole qualquer texto — lista da Sala do Futuro, secretaria, planilha. A IA vai extrair só os nomes.
+                </p>
+                <textarea
+                  value={importTexto} onChange={e=>setImportTexto(e.target.value)}
+                  placeholder={"João da Silva  Aluno ativo\nMaria Souza  Aluno ativo\n123  PEDRO OLIVEIRA\n..."}
+                  rows={7} style={{width:"100%",borderRadius:"8px",padding:"0.75rem",fontSize:"0.85rem",
+                    resize:"vertical",marginBottom:"0.75rem",border:"1px solid var(--border)"}}
+                />
+                <button className="btn-primary" style={{width:"100%"}} disabled={carregando || !importTexto.trim()}
+                  onClick={processarTextoImport}>
+                  {carregando ? "⏳ Extraindo nomes com IA..." : "🤖 Extrair Nomes com IA"}
+                </button>
+              </div>
+            )}
+
+            {/* Loading arquivo */}
+            {importTipo === "arquivo" && carregando && (
+              <p style={{color:"var(--accent)",fontWeight:"600",marginBottom:"1rem"}}>⏳ Extraindo nomes com IA...</p>
+            )}
+
+            {/* Lista editável */}
+            {nomesEditados.length > 0 && (
+              <div>
+                <p style={{fontWeight:"600",marginBottom:"0.5rem",color:"var(--text)"}}>
+                  {nomesEditados.length} alunos encontrados — edite se necessário:
+                </p>
+                <div style={{maxHeight:"220px",overflowY:"auto",border:"1px solid var(--border)",borderRadius:"8px",
+                  padding:"0.5rem",marginBottom:"1rem",display:"flex",flexDirection:"column",gap:"0.35rem"}}>
                   {nomesEditados.map((n,i)=>(
                     <div key={i} style={{display:"flex",gap:"0.4rem",alignItems:"center"}}>
                       <span style={{color:"var(--text-muted)",fontSize:"0.75rem",minWidth:"1.5rem"}}>{String(i+1).padStart(2,"0")}.</span>
-                      <input value={n} onChange={e=>{const arr=[...nomesEditados];arr[i]=e.target.value;setNomesEditados(arr)}} style={{flex:1,fontSize:"0.9rem",padding:"0.2rem 0.5rem",border:"1px solid var(--border)",borderRadius:"6px",background:"var(--bg)",color:"var(--text)"}} />
-                      <button onClick={()=>setNomesEditados(prev=>prev.filter((_,j)=>j!==i))} style={{color:"#DC2626",background:"none",border:"none",cursor:"pointer"}}>✕</button>
+                      <input value={n} onChange={e=>{const arr=[...nomesEditados];arr[i]=e.target.value;setNomesEditados(arr)}}
+                        style={{flex:1,fontSize:"0.9rem",padding:"0.2rem 0.5rem",border:"1px solid var(--border)",
+                          borderRadius:"6px",background:"var(--bg)",color:"var(--text)"}} />
+                      <button onClick={()=>setNomesEditados(prev=>prev.filter((_,j)=>j!==i))}
+                        style={{color:"#DC2626",background:"none",border:"none",cursor:"pointer"}}>✕</button>
                     </div>
                   ))}
                 </div>
-                <button className="btn-primary" onClick={confirmarImport} style={{width:"100%",marginBottom:"0.5rem"}}>✓ Confirmar e Importar {nomesEditados.filter(n=>n.trim().length>2).length} alunos</button>
+                <button className="btn-primary" onClick={confirmarImport} style={{width:"100%",marginBottom:"0.5rem"}}>
+                  ✓ Confirmar e Importar {nomesEditados.filter(n=>n.trim().length>2).length} alunos
+                </button>
+                <button className="btn-ghost" onClick={()=>setNomesEditados([])} style={{width:"100%"}}>
+                  ← Voltar e editar
+                </button>
               </div>
             )}
-            <button className="btn-ghost" onClick={()=>{setImportando(false);setNomesEditados([])}} style={{width:"100%"}}>Cancelar</button>
+
+            {nomesEditados.length === 0 && (
+              <button className="btn-ghost" onClick={()=>{setImportando(false);setNomesEditados([]);setImportTexto("")}}
+                style={{width:"100%",marginTop:"0.75rem"}}>Cancelar</button>
+            )}
           </div>
         </div>
       )}
