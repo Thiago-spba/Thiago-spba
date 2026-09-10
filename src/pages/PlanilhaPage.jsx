@@ -35,7 +35,7 @@ function limparMarkdown(t) {
 }
 
 export default function PlanilhaPage({ turma }) {
-  const [bimestre, setBimestre]             = useState("1 Bimestre")
+  const [bimestre, setBimestre]             = useState(() => localStorage.getItem("bimestre_"+turma.id) || "1 Bimestre")
   const [alunos, setAlunos]                 = useState([])
   const [notas, setNotas]                   = useState({})
   const [local, setLocal]                   = useState({})
@@ -426,7 +426,7 @@ Agora, escreva o relatório.`
   return (
     <div style={{paddingTop:"1rem"}}>
       <div style={{display:"flex",gap:"0.5rem",alignItems:"center",marginBottom:"1rem",flexWrap:"wrap",width:"100%"}}>
-        <select value={bimestre} onChange={e=>setBimestre(e.target.value)} className="input-modern" style={{flex:"1",minWidth:"120px",maxWidth:"200px",fontWeight:"600",cursor:"pointer"}}>
+        <select value={bimestre} onChange={e=>{setBimestre(e.target.value);localStorage.setItem("bimestre_"+turma.id,e.target.value)}} className="input-modern" style={{flex:"1",minWidth:"120px",maxWidth:"200px",fontWeight:"600",cursor:"pointer"}}>
           {BIMESTRES.map(b=><option key={b} value={b}>{b}</option>)}
         </select>
         <div style={{position:"relative"}}>
@@ -557,7 +557,8 @@ Agora, escreva o relatório.`
         </div>
       )}
 
-      <div className="card" style={{overflowX:"auto",marginBottom:"1rem"}}>
+      {/* Tabela — desktop */}
+      <div className="desktop-table card" style={{overflowX:"auto",marginBottom:"1rem"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:"0.9rem"}}>
           <thead>
             <tr style={{borderBottom:"2px solid var(--border)"}}>
@@ -572,7 +573,7 @@ Agora, escreva o relatório.`
             {alunos.length===0 && <tr><td colSpan="8" style={{padding:"2rem",textAlign:"center",color:"var(--text-muted)",fontStyle:"italic"}}>Nenhum aluno registrado</td></tr>}
             {alunos.map((a,i)=>(
               <tr key={a.id} style={{borderBottom:"1px solid var(--border)"}}>
-                <td style={{padding:"0.5rem",color:"var(--text-muted)",fontSize:"0.8rem",textAlign:"center"}}>{String(i+1).padStart(2,"00")}</td>
+                <td style={{padding:"0.5rem",color:"var(--text-muted)",fontSize:"0.8rem",textAlign:"center"}}>{String(i+1).padStart(2,"0")}</td>
                 <td style={{padding:"0.5rem",color:"var(--text)",fontWeight:"500"}}>{a.nome}</td>
                 {CRITERIOS.map(c=>{const val=getVal(a.id,c);return <td key={c} style={{padding:"0.3rem",textAlign:"center"}}><input type="number" min="0" max="10" step="0.5" value={val} onChange={e=>onChange(a.id,c,e.target.value)} onBlur={e=>onBlur(a.id,c,e.target.value)} className={"nota-input "+corNota(val)} /></td>})}
                 <td style={{padding:"0.3rem"}}><input type="text" value={local[a.id+"_obs"] !== undefined ? local[a.id+"_obs"] : (a.obs||"")} onChange={e=>onChange(a.id,"obs",e.target.value)} onBlur={e=>onBlur(a.id,"obs",e.target.value)} placeholder="Ex: transferido..." className="obs-input" /></td>
@@ -584,6 +585,43 @@ Agora, escreva o relatório.`
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Cards — mobile */}
+      <div className="mobile-cards" style={{marginBottom:"1rem"}}>
+        {alunos.length===0 && <p style={{textAlign:"center",color:"var(--text-muted)",fontStyle:"italic",padding:"2rem 0"}}>Nenhum aluno registrado</p>}
+        {alunos.map((a,i)=>(
+          <div key={a.id} className="card" style={{padding:"1rem",marginBottom:"0.75rem"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"0.75rem"}}>
+              <span style={{fontWeight:"700",color:"var(--text)",fontSize:"0.95rem"}}>{String(i+1).padStart(2,"0")}. {a.nome}</span>
+              <div style={{display:"flex",gap:"0.5rem"}}>
+                <button onClick={()=>abrirRelatorio(a)} title="Avaliação Descritiva" style={{background:"none",border:"none",cursor:"pointer",fontSize:"1.2rem"}}>📝</button>
+                <button onClick={()=>delAluno(a.id)} style={{color:"#ef4444",background:"none",border:"none",cursor:"pointer",fontSize:"1.2rem"}}>✕</button>
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:"0.5rem",marginBottom:"0.5rem"}}>
+              {CRITERIOS.map((c,ci)=>{
+                const val=getVal(a.id,c)
+                return (
+                  <div key={c} style={{display:"flex",flexDirection:"column",gap:"0.25rem",alignItems:"center"}}>
+                    <label style={{fontSize:"0.7rem",color:"var(--text-muted)",fontWeight:"600",textTransform:"uppercase"}}>{LABELS[ci]}</label>
+                    <input type="number" min="0" max="10" step="0.5" value={val}
+                      onChange={e=>onChange(a.id,c,e.target.value)}
+                      onBlur={e=>onBlur(a.id,c,e.target.value)}
+                      className={"nota-input "+corNota(val)}
+                      style={{width:"100%",fontSize:"1.1rem",padding:"0.5rem",textAlign:"center"}} />
+                  </div>
+                )
+              })}
+            </div>
+            <input type="text"
+              value={local[a.id+"_obs"] !== undefined ? local[a.id+"_obs"] : (a.obs||"")}
+              onChange={e=>onChange(a.id,"obs",e.target.value)}
+              onBlur={e=>onBlur(a.id,"obs",e.target.value)}
+              placeholder="Observação (ex: transferido...)"
+              style={{width:"100%",fontSize:"0.9rem",padding:"0.5rem 0.75rem",border:"1px solid var(--border)",borderRadius:"8px",background:"var(--bg)",color:"var(--text)"}} />
+          </div>
+        ))}
       </div>
 
       <div style={{display:"flex",gap:"0.5rem",flexWrap:"wrap"}}>

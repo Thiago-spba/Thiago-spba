@@ -44,22 +44,16 @@ select.input-modern{background:var(--bg-card);color:var(--text);}
 textarea{background:var(--bg-card);color:var(--text);border:1px solid var(--border);}
 .dark textarea{background:var(--bg);color:var(--text);}
 
-@media (max-width: 640px) {
-  .header-inner { padding: 0.5rem 0; gap: 0.5rem; }
-  main { padding: 0.75rem !important; }
-  table { font-size: 0.8rem !important; }
-  .nota-input { width: 3rem !important; font-size: 0.85rem !important; }
-  .obs-input { width: 80px !important; }
-  th, td { padding: 0.4rem 0.25rem !important; }
-  .hero-card { padding: 1rem !important; }
-  .hero-card h1 { font-size: 1.25rem !important; }
-}
+/* desktop: mostra tabela, esconde cards */
+.desktop-table { display: block; }
+.mobile-cards  { display: none; }
 
-.thead-sticky th {
-  position: sticky;
-  top: 0;
-  background: var(--bg-card);
-  z-index: 5;
-  border-bottom: 2px solid var(--border);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.07);
+@media (max-width: 640px) {
+  .header-inner  { padding: 0.5rem 0; gap: 0.5rem; }
+  main           { padding: 0.75rem !important; }
+  .hero-card     { padding: 1rem !important; }
+  .hero-card h1  { font-size: 1.25rem !important; }
+  /* troca tabela por cards no celular */
+  .desktop-table { display: none; }
+  .mobile-cards  { display: block; }
 }
