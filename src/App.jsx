@@ -16,7 +16,6 @@ export default function App() {
   const [pagina, setPagina] = useState("turmas")
   const [turmaSel, setTurmaSel] = useState(null)
   const [dark, setDark] = useState(() => localStorage.getItem("dark") === "true")
-  const [footerExp, setFooterExp] = useState(false)
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -114,17 +113,6 @@ export default function App() {
         {pagina === "turmas" && <TurmasPage onSelectTurma={irPlanilha} />}
         {pagina === "planilha" && <PlanilhaPage turma={turmaSel} />}
       </main>
-      <footer style={{textAlign:"center",padding:"0.6rem 1rem",marginTop:"1rem",borderTop:"1px solid var(--border)",fontSize:"0.72rem",color:"var(--text-muted)"}}>
-        <span style={{cursor:"pointer",userSelect:"none"}} onClick={()=>setFooterExp(!footerExp)}>
-          Prof. Thiago Fernando {footerExp ? "▲" : "▼"}
-        </span>
-        {footerExp && (
-          <div style={{marginTop:"0.35rem",lineHeight:1.7}}>
-            Lic. Matemática · Lic. História · Pós-grad. Metodologia de Ensino
-            · Graduando em Eng. de Computação · © {new Date().getFullYear()}
-          </div>
-        )}
-      </footer>
     </div>
   )
 }

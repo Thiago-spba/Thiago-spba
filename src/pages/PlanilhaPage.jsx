@@ -34,6 +34,34 @@ function limparMarkdown(t) {
     .trim()
 }
 
+// ── Sincronização ─────────────────────────────────────────────
+function normalizarNome(n) {
+  return n.toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g,"")
+    .replace(/[^a-z\s]/g,"").replace(/\s+/g," ").trim()
+}
+function similaridade(a, b) {
+  const na = normalizarNome(a), nb = normalizarNome(b)
+  if (na === nb) return "exato"
+  const pa = na.split(" ").filter(p=>p.length>2)
+  const pb = nb.split(" ").filter(p=>p.length>2)
+  if (pa.length && pb.length && (pa.every(p=>nb.includes(p)) || pb.every(p=>na.includes(p)))) return "similar"
+  return "diferente"
+}
+function compararListas(cadastrados, importados) {
+  const confirmados=[], remover=[], adicionar=[], duplicatas=[]
+  const usados = new Set()
+  for (const aluno of cadastrados) {
+    const exato = importados.find(n=>similaridade(aluno.nome,n)==="exato")
+    if (exato) { confirmados.push(aluno); usados.add(exato); continue }
+    const sim = importados.find(n=>!usados.has(n)&&similaridade(aluno.nome,n)==="similar")
+    if (sim) { duplicatas.push({aluno, nomeLista:sim}); usados.add(sim); continue }
+    remover.push(aluno)
+  }
+  importados.forEach(n=>{ if(!usados.has(n)) adicionar.push(n) })
+  return { confirmados, remover, adicionar, duplicatas }
+}
+
 export default function PlanilhaPage({ turma }) {
   const [bimestre, setBimestre]             = useState(() => localStorage.getItem("bimestre_"+turma.id) || "1 Bimestre")
   const [alunos, setAlunos]                 = useState([])
@@ -54,6 +82,16 @@ export default function PlanilhaPage({ turma }) {
   const [escolaInput, setEscolaInput]       = useState("")
   const [editandoEscola, setEditandoEscola] = useState(false)
   const [apagandoTodos, setApagandoTodos]   = useState(false)
+  // Sincronização
+  const [sincModal, setSincModal]           = useState(false)
+  const [sincPasso, setSincPasso]           = useState(1)
+  const [sincTipo, setSincTipo]             = useState("texto")
+  const [sincTexto, setSincTexto]           = useState("")
+  const [sincProcessando, setSincProcessando] = useState(false)
+  const [sincResultado, setSincResultado]   = useState(null)
+  const [sincRemoverSel, setSincRemoverSel] = useState(new Set())
+  const [sincAdicionarSel, setSincAdicionarSel] = useState(new Set())
+  const [sincAplicando, setSincAplicando]   = useState(false)
 
   useEffect(() => {
     getDoc(doc(db,"config","professor")).then(d => {
@@ -134,6 +172,65 @@ export default function PlanilhaPage({ turma }) {
   const salvarEscola = async () => {
     await setDoc(doc(db,"config","professor"), {escola:escolaInput}, {merge:true})
     setEscola(escolaInput); setEditandoEscola(false)
+  }
+
+  // ── Sincronização com Sala do Futuro ──────────────────────────
+  const abrirSinc = () => {
+    setSincModal(true); setSincPasso(1); setSincTipo("texto")
+    setSincTexto(""); setSincProcessando(false); setSincResultado(null)
+    setSincRemoverSel(new Set()); setSincAdicionarSel(new Set())
+    setMenu(false)
+  }
+
+  const processarSinc = async (file) => {
+    setSincProcessando(true)
+    let nomes = []
+    try {
+      if (sincTipo === "texto") {
+        nomes = sincTexto.split(/\r?\n/)
+          .map(n => n.trim().replace(/^[-*•\d.)]+\s*/,""))
+          .filter(n => n.length > 2 && /[a-zA-ZÀ-ÿ]/.test(n))
+      } else if (sincTipo === "excel" && file) {
+        const buffer = await file.arrayBuffer()
+        const wb = XLSX.read(buffer, {type:"array"})
+        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header:1})
+        nomes = extrairNomesExcel(rows)
+      } else if (sincTipo === "pdf" && file) {
+        const base64 = await new Promise((res,rej)=>{
+          const r = new FileReader()
+          r.onload = () => res(r.result.split(",")[1])
+          r.onerror = rej
+          r.readAsDataURL(file)
+        })
+        const resp = await fetch("/api/extract-names",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({base64})})
+        const data = await resp.json()
+        if (data.error) throw new Error(data.error)
+        nomes = data.nomes || []
+      }
+      if (nomes.length === 0) { alert("Nenhum nome encontrado. Verifique o arquivo ou o texto colado."); setSincProcessando(false); return }
+      const resultado = compararListas(alunos, nomes)
+      setSincResultado(resultado)
+      setSincRemoverSel(new Set(resultado.remover.map(a=>a.id)))
+      setSincAdicionarSel(new Set(resultado.adicionar))
+      setSincPasso(2)
+    } catch(err) { alert("Erro ao processar: "+err.message) }
+    setSincProcessando(false)
+  }
+
+  const aplicarSinc = async () => {
+    setSincAplicando(true)
+    try {
+      const promessas = []
+      sincResultado.remover.forEach(a => {
+        if (sincRemoverSel.has(a.id)) promessas.push(deleteDoc(doc(db,"alunos",a.id)))
+      })
+      for (const n of sincResultado.adicionar) {
+        if (sincAdicionarSel.has(n)) promessas.push(addDoc(collection(db,"alunos"),{nome:n,turmaId:turma.id,obs:""}))
+      }
+      await Promise.all(promessas)
+      setSincModal(false)
+    } catch(err) { alert("Erro ao aplicar: "+err.message) }
+    setSincAplicando(false)
   }
 
   const abrirRelatorio = async (aluno) => {
@@ -436,6 +533,7 @@ Agora, escreva o relatório.`
               <button style={btnMenu} onClick={exportarPDF}>📄 Exportar PDF</button>
               <button style={btnMenu} onClick={exportarExcel}>📊 Exportar Excel</button>
               <button style={btnMenu} onClick={()=>{setImportando(true);setMenu(false)}}>📥 Importar Lista (PDF / Excel)</button>
+              <button style={btnMenu} onClick={abrirSinc}>🔄 Sincronizar com Sala do Futuro</button>
               <button style={{...btnMenu,borderBottom:"none"}} onClick={()=>{setEditandoEscola(true);setMenu(false)}}>🏫 {escola||"Definir Escola"}</button>
             </div>
           )}
@@ -500,6 +598,135 @@ Agora, escreva o relatório.`
               </div>
             )}
             <button className="btn-ghost" onClick={()=>{setImportando(false);setNomesEditados([])}} style={{width:"100%"}}>Cancelar</button>
+          </div>
+        </div>
+      )}
+
+      {sincModal && (
+        <div style={overlay}>
+          <div style={{...modal,maxWidth:"580px"}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
+              <div>
+                <h3 style={{fontWeight:"700",color:"var(--text)"}}>🔄 Sincronizar com Sala do Futuro</h3>
+                <p style={{fontSize:"0.8rem",color:"var(--text-muted)"}}>Passo {sincPasso} de 2</p>
+              </div>
+              <button onClick={()=>setSincModal(false)} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:"1.2rem"}}>✕</button>
+            </div>
+
+            {sincPasso === 1 && (
+              <div>
+                <p style={{fontSize:"0.85rem",color:"var(--text-muted)",marginBottom:"1rem"}}>
+                  Compare a lista atual da turma com a lista da Sala do Futuro. Escolha como quer enviar os dados:
+                </p>
+                <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>
+                  {["texto","excel","pdf"].map(t=>(
+                    <button key={t} onClick={()=>setSincTipo(t)}
+                      style={{flex:1,padding:"0.6rem",borderRadius:"8px",fontWeight:"600",fontSize:"0.85rem",cursor:"pointer",border:"2px solid",
+                        borderColor: sincTipo===t ? "var(--accent)" : "var(--border)",
+                        background: sincTipo===t ? "var(--accent-light)" : "var(--bg-card)",
+                        color: sincTipo===t ? "var(--accent)" : "var(--text-muted)"}}>
+                      {t==="texto"?"📋 Texto":t==="excel"?"📊 Excel":"📄 PDF"}
+                    </button>
+                  ))}
+                </div>
+
+                {sincTipo === "texto" && (
+                  <div>
+                    <p style={{fontSize:"0.8rem",color:"var(--text-muted)",marginBottom:"0.5rem"}}>Cole a lista da Sala do Futuro (um nome por linha):</p>
+                    <textarea
+                      value={sincTexto} onChange={e=>setSincTexto(e.target.value)}
+                      placeholder={"João da Silva\nMaria Souza\nPedro Oliveira..."}
+                      rows={8} style={{width:"100%",borderRadius:"8px",padding:"0.75rem",fontSize:"0.9rem",resize:"vertical",marginBottom:"1rem"}}
+                    />
+                    <button className="btn-primary" style={{width:"100%"}} disabled={sincProcessando || !sincTexto.trim()} onClick={()=>processarSinc(null)}>
+                      {sincProcessando ? "⏳ Comparando..." : "Comparar Listas →"}
+                    </button>
+                  </div>
+                )}
+
+                {(sincTipo === "excel" || sincTipo === "pdf") && (
+                  <div>
+                    <p style={{fontSize:"0.8rem",color:"var(--text-muted)",marginBottom:"0.5rem"}}>
+                      {sincTipo==="excel" ? "Envie o arquivo Excel (.xlsx, .xls, .csv) da Sala do Futuro:" : "Envie o PDF da Sala do Futuro:"}
+                    </p>
+                    <input type="file" accept={sincTipo==="excel" ? ".xlsx,.xls,.csv" : ".pdf"}
+                      onChange={e=>{const f=e.target.files[0];if(f)processarSinc(f)}}
+                      style={{width:"100%",marginBottom:"1rem",color:"var(--text)"}} />
+                    {sincProcessando && <p style={{color:"var(--accent)",fontWeight:"600"}}>⏳ {sincTipo==="pdf"?"Extraindo nomes com IA...":"Lendo planilha..."}</p>}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {sincPasso === 2 && sincResultado && (
+              <div>
+                {/* Resumo */}
+                <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem",flexWrap:"wrap"}}>
+                  <span style={{padding:"0.3rem 0.75rem",borderRadius:"999px",fontSize:"0.8rem",fontWeight:"600",background:"#F0FDF4",color:"#16A34A"}}>✓ {sincResultado.confirmados.length} confirmados</span>
+                  {sincResultado.duplicatas.length>0 && <span style={{padding:"0.3rem 0.75rem",borderRadius:"999px",fontSize:"0.8rem",fontWeight:"600",background:"#FFFBEB",color:"#D97706"}}>~ {sincResultado.duplicatas.length} similares</span>}
+                  {sincResultado.remover.length>0 && <span style={{padding:"0.3rem 0.75rem",borderRadius:"999px",fontSize:"0.8rem",fontWeight:"600",background:"#FEF2F2",color:"#DC2626"}}>✕ {sincResultado.remover.length} p/ remover</span>}
+                  {sincResultado.adicionar.length>0 && <span style={{padding:"0.3rem 0.75rem",borderRadius:"999px",fontSize:"0.8rem",fontWeight:"600",background:"#EFF6FF",color:"#2563EB"}}>+ {sincResultado.adicionar.length} p/ adicionar</span>}
+                </div>
+
+                {/* Similares (nomes ligeiramente diferentes) */}
+                {sincResultado.duplicatas.length > 0 && (
+                  <div style={{marginBottom:"1rem"}}>
+                    <p style={{fontWeight:"700",fontSize:"0.85rem",color:"#D97706",marginBottom:"0.5rem"}}>⚠️ Nomes similares (mantidos, apenas aviso):</p>
+                    <div style={{maxHeight:"110px",overflowY:"auto",border:"1px solid #FDE68A",borderRadius:"8px",padding:"0.5rem",background:"#FFFBEB"}}>
+                      {sincResultado.duplicatas.map(({aluno,nomeLista},i)=>(
+                        <div key={i} style={{fontSize:"0.8rem",padding:"0.2rem 0",borderBottom:"1px solid #FDE68A",color:"#92400E"}}>
+                          <b>{aluno.nome}</b> ← na lista: {nomeLista}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Para remover */}
+                {sincResultado.remover.length > 0 && (
+                  <div style={{marginBottom:"1rem"}}>
+                    <p style={{fontWeight:"700",fontSize:"0.85rem",color:"#DC2626",marginBottom:"0.5rem"}}>✕ Não estão na Sala do Futuro — marque para remover:</p>
+                    <div style={{maxHeight:"130px",overflowY:"auto",border:"1px solid #FECACA",borderRadius:"8px",padding:"0.5rem",background:"#FEF2F2",display:"flex",flexDirection:"column",gap:"0.25rem"}}>
+                      {sincResultado.remover.map(a=>(
+                        <label key={a.id} style={{display:"flex",alignItems:"center",gap:"0.5rem",fontSize:"0.85rem",cursor:"pointer",color:"#7F1D1D",padding:"0.15rem 0"}}>
+                          <input type="checkbox" checked={sincRemoverSel.has(a.id)}
+                            onChange={e=>{const s=new Set(sincRemoverSel);e.target.checked?s.add(a.id):s.delete(a.id);setSincRemoverSel(s)}} />
+                          {a.nome}
+                        </label>
+                      ))}
+                    </div>
+                    <p style={{fontSize:"0.75rem",color:"#DC2626",marginTop:"0.3rem"}}>⚠️ Alunos removidos perdem as notas salvas.</p>
+                  </div>
+                )}
+
+                {/* Para adicionar */}
+                {sincResultado.adicionar.length > 0 && (
+                  <div style={{marginBottom:"1.25rem"}}>
+                    <p style={{fontWeight:"700",fontSize:"0.85rem",color:"#2563EB",marginBottom:"0.5rem"}}>+ Novos na Sala do Futuro — marque para adicionar:</p>
+                    <div style={{maxHeight:"130px",overflowY:"auto",border:"1px solid #BFDBFE",borderRadius:"8px",padding:"0.5rem",background:"#EFF6FF",display:"flex",flexDirection:"column",gap:"0.25rem"}}>
+                      {sincResultado.adicionar.map(n=>(
+                        <label key={n} style={{display:"flex",alignItems:"center",gap:"0.5rem",fontSize:"0.85rem",cursor:"pointer",color:"#1E3A8A",padding:"0.15rem 0"}}>
+                          <input type="checkbox" checked={sincAdicionarSel.has(n)}
+                            onChange={e=>{const s=new Set(sincAdicionarSel);e.target.checked?s.add(n):s.delete(n);setSincAdicionarSel(s)}} />
+                          {n}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {sincResultado.remover.length===0 && sincResultado.adicionar.length===0 && (
+                  <p style={{textAlign:"center",color:"#16A34A",fontWeight:"600",marginBottom:"1rem"}}>✅ Listas já estão sincronizadas! Nenhuma alteração necessária.</p>
+                )}
+
+                <div style={{display:"flex",gap:"0.5rem"}}>
+                  <button className="btn-ghost" onClick={()=>setSincPasso(1)} style={{flex:1}}>← Voltar</button>
+                  <button className="btn-primary" onClick={aplicarSinc} disabled={sincAplicando || (sincRemoverSel.size===0 && sincAdicionarSel.size===0)} style={{flex:2}}>
+                    {sincAplicando ? "⏳ Aplicando..." : `Aplicar alterações (${sincRemoverSel.size+sincAdicionarSel.size})`}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
