@@ -126,13 +126,13 @@ export default function PlanilhaPage({ turma }) {
 
   const onBlur = async (alunoId, campo, val) => {
     setLocal(prev => { const n={...prev}; delete n[alunoId+"_"+campo]; return n })
-    if (campo==="obs") { await updateDoc(doc(db,"alunos",alunoId), {obs:val}); return }
-    if (val!=="" && (Number(val)<0 || Number(val)>10)) return
+    // obs agora é por bimestre — salva junto com as notas (não mais no documento do aluno)
+    if (campo !== "obs" && val !== "" && (Number(val) < 0 || Number(val) > 10)) return
     const atual = notas[alunoId] || {}
     if (atual.docId) {
       await updateDoc(doc(db,"notas",atual.docId), {[campo]:val})
     } else {
-      await addDoc(collection(db,"notas"), {alunoId, turmaId:turma.id, trimestre:bimestre, atividades:"", participacao:"", comportamento:"", [campo]:val})
+      await addDoc(collection(db,"notas"), {alunoId, turmaId:turma.id, trimestre:bimestre, atividades:"", participacao:"", comportamento:"", obs:"", [campo]:val})
     }
   }
 
@@ -393,12 +393,12 @@ Agora, escreva o relatório.`
     pdf.text("Turma: "+turma.nome+"  |  "+turma.disciplina+(escola?"  |  "+escola:""),14,20)
     pdf.text(bimestre+"  |  Gerado em: "+new Date().toLocaleDateString("pt-BR"),14,26)
     pdf.setTextColor(0,0,0)
-    autoTable(pdf,{startY:32,head:[["#","Aluno","Atividades","Participação","Comportamento","Observação"]],body:alunos.map((a,i)=>[String(i+1).padStart(2,"00"),a.nome,notas[a.id]?.atividades??"",notas[a.id]?.participacao??"",notas[a.id]?.comportamento??"",a.obs||""]),styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[232,84,10],textColor:255,fontStyle:"bold"},alternateRowStyles:{fillColor:[249,250,251]}})
+    autoTable(pdf,{startY:32,head:[["#","Aluno","Atividades","Participação","Comportamento","Observação"]],body:alunos.map((a,i)=>[String(i+1).padStart(2,"00"),a.nome,notas[a.id]?.atividades??"",notas[a.id]?.participacao??"",notas[a.id]?.comportamento??"",notas[a.id]?.obs||""]),styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[232,84,10],textColor:255,fontStyle:"bold"},alternateRowStyles:{fillColor:[249,250,251]}})
     pdf.save(turma.nome+"_"+bimestre+".pdf"); setMenu(false)
   }
 
   const exportarExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(alunos.map((a,i)=>({"#":String(i+1).padStart(2,"00"),"Aluno":a.nome,"Atividades":notas[a.id]?.atividades??"","Participação":notas[a.id]?.participacao??"","Comportamento":notas[a.id]?.comportamento??"","Observação":a.obs||""})))
+    const ws = XLSX.utils.json_to_sheet(alunos.map((a,i)=>({"#":String(i+1).padStart(2,"00"),"Aluno":a.nome,"Atividades":notas[a.id]?.atividades??"","Participação":notas[a.id]?.participacao??"","Comportamento":notas[a.id]?.comportamento??"","Observação":notas[a.id]?.obs||""})))
     const wb = XLSX.utils.book_new()
     XLSX.utils.book_append_sheet(wb,ws,bimestre)
     XLSX.writeFile(wb,turma.nome+"_"+bimestre+".xlsx"); setMenu(false)
@@ -816,7 +816,7 @@ Agora, escreva o relatório.`
                 <td style={{padding:"0.5rem",color:"var(--text-muted)",fontSize:"0.8rem",textAlign:"center"}}>{String(i+1).padStart(2,"0")}</td>
                 <td style={{padding:"0.5rem",color:"var(--text)",fontWeight:"500"}}>{a.nome}</td>
                 {CRITERIOS.map(c=>{const val=getVal(a.id,c);return <td key={c} style={{padding:"0.3rem",textAlign:"center"}}><input type="number" min="0" max="10" step="0.5" value={val} onChange={e=>onChange(a.id,c,e.target.value)} onBlur={e=>onBlur(a.id,c,e.target.value)} className={"nota-input "+corNota(val)} /></td>})}
-                <td style={{padding:"0.3rem"}}><input type="text" value={local[a.id+"_obs"] !== undefined ? local[a.id+"_obs"] : (a.obs||"")} onChange={e=>onChange(a.id,"obs",e.target.value)} onBlur={e=>onBlur(a.id,"obs",e.target.value)} placeholder="Ex: transferido..." className="obs-input" /></td>
+                <td style={{padding:"0.3rem"}}><input type="text" value={local[a.id+"_obs"] !== undefined ? local[a.id+"_obs"] : (notas[a.id]?.obs||"")} onChange={e=>onChange(a.id,"obs",e.target.value)} onBlur={e=>onBlur(a.id,"obs",e.target.value)} placeholder="Ex: transferido..." className="obs-input" /></td>
                 <td style={{padding:"0.3rem",textAlign:"center",whiteSpace:"nowrap"}}>
                   <button onClick={()=>abrirRelatorio(a)} title="Avaliação Descritiva" style={{background:"none",border:"none",cursor:"pointer",fontSize:"1rem",marginRight:"0.25rem"}}>📝</button>
                   <button onClick={()=>delAluno(a.id)} style={{color:"var(--text-muted)",background:"none",border:"none",cursor:"pointer",fontSize:"1rem"}}>✕</button>
@@ -855,7 +855,7 @@ Agora, escreva o relatório.`
               })}
             </div>
             <input type="text"
-              value={local[a.id+"_obs"] !== undefined ? local[a.id+"_obs"] : (a.obs||"")}
+              value={local[a.id+"_obs"] !== undefined ? local[a.id+"_obs"] : (notas[a.id]?.obs||"")}
               onChange={e=>onChange(a.id,"obs",e.target.value)}
               onBlur={e=>onBlur(a.id,"obs",e.target.value)}
               placeholder="Observação (ex: transferido...)"
