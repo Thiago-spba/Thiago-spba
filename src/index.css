@@ -56,4 +56,8 @@ textarea{background:var(--bg-card);color:var(--text);border:1px solid var(--bord
   /* troca tabela por cards no celular */
   .desktop-table { display: none; }
   .mobile-cards  { display: block; }
+  /* cards circulares de turma: 3 colunas no celular */
+  .turmas-grid   { grid-template-columns: repeat(3, 1fr) !important; gap: 0.6rem !important; }
+  /* abas FBG/FTP: fonte menor no celular */
+  .abas-turma button { font-size: 0.78rem !important; padding: 0.5rem 0.25rem !important; }
 }

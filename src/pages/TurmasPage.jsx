@@ -11,7 +11,7 @@ export default function TurmasPage({ onSelectTurma }) {
   const [disciplina, setDisciplina] = useState("")
   const [tipo, setTipo] = useState("basica")
   const [form, setForm] = useState(false)
-  const [aba, setAba] = useState("todas")
+  const [aba, setAba] = useState("basica")
 
   useEffect(() => {
     return onSnapshot(collection(db,"turmas"), snap => {
@@ -23,6 +23,7 @@ export default function TurmasPage({ onSelectTurma }) {
     if (!nome.trim() || !disciplina.trim()) return
     await addDoc(collection(db,"turmas"), {nome, disciplina, tipo})
     setNome(""); setDisciplina(""); setTipo("basica"); setForm(false)
+    setAba(tipo) // muda para a aba da turma recém criada
   }
 
   const remover = async (e, id) => {
@@ -32,149 +33,141 @@ export default function TurmasPage({ onSelectTurma }) {
 
   const fbg = turmas.filter(t => t.tipo !== "tecnica")
   const ftp = turmas.filter(t => t.tipo === "tecnica")
-  const lista = aba === "basica" ? fbg : aba === "tecnica" ? ftp : turmas
-
-  const corCard = (t, i) =>
-    t.tipo === "tecnica"
-      ? CORES_FTP[ftp.indexOf(t) % CORES_FTP.length]
-      : CORES_FBG[fbg.indexOf(t) % CORES_FBG.length]
-
-  const tabStyle = (key) => ({
-    padding: "0.45rem 1.1rem",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "700",
-    fontSize: "0.85rem",
-    transition: "all 0.15s",
-    background: aba === key
-      ? (key === "tecnica" ? "#2563EB" : key === "basica" ? "var(--accent)" : "var(--text)")
-      : "var(--bg-card)",
-    color: aba === key ? "white" : "var(--text-muted)",
-    border: aba === key ? "none" : "1px solid var(--border)"
-  })
+  const lista = aba === "basica" ? fbg : ftp
+  const cores = aba === "basica" ? CORES_FBG : CORES_FTP
+  const cor_aba = aba === "basica" ? "var(--accent)" : "#2563EB"
 
   return (
     <div style={{paddingTop:"1rem"}}>
+      {/* Hero */}
       <div className="hero-card" style={{marginBottom:"1.5rem"}}>
         <span className="badge">📋 Portal do Professor</span>
-        <h1 style={{fontSize:"clamp(1.5rem,5vw,2rem)",fontWeight:"800",margin:"0.75rem 0 0.5rem",color:"var(--text)"}}>Prof. Thiago Fernando</h1>
-        <p style={{color:"var(--text-muted)",fontSize:"0.95rem",fontStyle:"italic"}}>"A historia explica de onde viemos; a tecnologia programa o seu futuro."</p>
+        <h1 style={{fontSize:"clamp(1.5rem,5vw,2rem)",fontWeight:"800",margin:"0.75rem 0 0.5rem",color:"var(--text)"}}>
+          Prof. Thiago Fernando
+        </h1>
+        <p style={{color:"var(--text-muted)",fontSize:"0.95rem",fontStyle:"italic"}}>
+          "A historia explica de onde viemos; a tecnologia programa o seu futuro."
+        </p>
       </div>
 
+      {/* Cabeçalho + botão + */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem",flexWrap:"wrap",gap:"0.75rem"}}>
         <div>
           <h2 style={{fontWeight:"700",fontSize:"1.1rem",color:"var(--text)"}}>Painel de Turmas</h2>
           <p style={{fontSize:"0.8rem",color:"var(--text-muted)"}}>Selecione uma turma para lançar as avaliações</p>
         </div>
-        <button onClick={() => setForm(!form)} title="Nova Turma" style={{width:"48px",height:"48px",borderRadius:"50%",background:"var(--accent)",color:"white",border:"none",fontSize:"1.6rem",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 4px 12px rgba(232,84,10,0.4)",flexShrink:0}}>+</button>
+        <button onClick={() => setForm(!form)} title="Nova Turma"
+          style={{width:"48px",height:"48px",borderRadius:"50%",background:"var(--accent)",color:"white",
+            border:"none",fontSize:"1.6rem",cursor:"pointer",display:"flex",alignItems:"center",
+            justifyContent:"center",boxShadow:"0 4px 12px rgba(232,84,10,0.4)",flexShrink:0}}>+</button>
       </div>
 
-      {/* Abas */}
-      <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem",flexWrap:"wrap"}}>
-        <button style={tabStyle("todas")} onClick={()=>setAba("todas")}>
-          Todas ({turmas.length})
-        </button>
-        <button style={tabStyle("basica")} onClick={()=>setAba("basica")}>
+      {/* Abas FBG / FTP */}
+      <div className="abas-turma" style={{display:"flex",gap:"0.5rem",marginBottom:"1.5rem"}}>
+        <button onClick={()=>setAba("basica")} style={{
+          flex:1, padding:"0.6rem 0.5rem", borderRadius:"10px", border:"none", cursor:"pointer",
+          fontWeight:"700", fontSize:"0.9rem", transition:"all 0.15s",
+          background: aba==="basica" ? "var(--accent)" : "var(--bg-card)",
+          color: aba==="basica" ? "white" : "var(--text-muted)",
+          boxShadow: aba==="basica" ? "0 2px 8px rgba(232,84,10,0.35)" : "none",
+          border: aba==="basica" ? "none" : "1px solid var(--border)"
+        }}>
           🟠 FBG — Básica ({fbg.length})
         </button>
-        <button style={tabStyle("tecnica")} onClick={()=>setAba("tecnica")}>
+        <button onClick={()=>setAba("tecnica")} style={{
+          flex:1, padding:"0.6rem 0.5rem", borderRadius:"10px", border:"none", cursor:"pointer",
+          fontWeight:"700", fontSize:"0.9rem", transition:"all 0.15s",
+          background: aba==="tecnica" ? "#2563EB" : "var(--bg-card)",
+          color: aba==="tecnica" ? "white" : "var(--text-muted)",
+          boxShadow: aba==="tecnica" ? "0 2px 8px rgba(37,99,235,0.35)" : "none",
+          border: aba==="tecnica" ? "none" : "1px solid var(--border)"
+        }}>
           🔵 FTP — Técnica ({ftp.length})
         </button>
       </div>
 
+      {/* Form nova turma */}
       {form && (
-        <div className="card" style={{padding:"1rem",marginBottom:"1rem",display:"flex",flexDirection:"column",gap:"0.75rem"}}>
+        <div className="card" style={{padding:"1rem",marginBottom:"1.25rem",display:"flex",flexDirection:"column",gap:"0.75rem"}}>
           <h3 style={{fontWeight:"600",color:"var(--text)"}}>Registrar Nova Turma</h3>
-          <input className="input-modern" value={nome} onChange={e => setNome(e.target.value)} placeholder="Nome da turma (ex: 1G)" />
-          <input className="input-modern" value={disciplina} onChange={e => setDisciplina(e.target.value)} placeholder="Disciplina (ex: História)" />
-          <select className="input-modern" value={tipo} onChange={e => setTipo(e.target.value)}>
+          <input className="input-modern" value={nome} onChange={e=>setNome(e.target.value)} placeholder="Nome da turma (ex: 1G)" />
+          <input className="input-modern" value={disciplina} onChange={e=>setDisciplina(e.target.value)} placeholder="Disciplina (ex: História)" />
+          <select className="input-modern" value={tipo} onChange={e=>setTipo(e.target.value)}>
             <option value="basica">🟠 Formação Básica — História, etc.</option>
             <option value="tecnica">🔵 Formação Técnica — Software, Competências, etc.</option>
           </select>
           <div style={{display:"flex",gap:"0.5rem"}}>
             <button className="btn-primary" onClick={adicionar}>Registrar</button>
-            <button className="btn-ghost" onClick={() => setForm(false)}>Cancelar</button>
+            <button className="btn-ghost" onClick={()=>setForm(false)}>Cancelar</button>
           </div>
         </div>
       )}
 
-      {/* Seção FBG */}
-      {(aba === "todas" || aba === "basica") && fbg.length > 0 && (
-        <div style={{marginBottom:"1.5rem"}}>
-          {aba === "todas" && (
-            <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.75rem"}}>
-              <div style={{width:"10px",height:"10px",borderRadius:"50%",background:"var(--accent)",flexShrink:0}}/>
-              <span style={{fontWeight:"700",fontSize:"0.9rem",color:"var(--accent)"}}>Formação Básica</span>
-              <span style={{fontSize:"0.8rem",color:"var(--text-muted)"}}>— {fbg.length} turma{fbg.length!==1?"s":""}</span>
-            </div>
-          )}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:"1rem"}}>
-            {fbg.map((t,i) => (
-              <div key={t.id} onClick={() => onSelectTurma(t)} className="card"
-                style={{padding:"1.25rem",cursor:"pointer",borderTop:"4px solid "+CORES_FBG[i%CORES_FBG.length]}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                  <div>
-                    <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.25rem"}}>
-                      <div style={{width:"32px",height:"32px",borderRadius:"50%",background:CORES_FBG[i%CORES_FBG.length],display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontWeight:"800",fontSize:"0.8rem",flexShrink:0}}>
-                        {t.nome.replace(/\s/g,"").slice(0,2).toUpperCase()}
-                      </div>
-                      <p style={{fontWeight:"700",fontSize:"1.1rem",color:"var(--text)"}}>{t.nome}</p>
-                    </div>
-                    <p style={{fontSize:"0.85rem",color:"var(--text-muted)",marginTop:"0.2rem"}}>{t.disciplina}</p>
-                    <span style={{fontSize:"0.7rem",background:"#FFF3ED",color:"var(--accent)",padding:"0.15rem 0.5rem",borderRadius:"999px",fontWeight:"600",marginTop:"0.5rem",display:"inline-block"}}>
-                      Formação Básica
-                    </span>
-                  </div>
-                  <button onClick={e => remover(e,t.id)} style={{color:"var(--text-muted)",background:"none",border:"none",cursor:"pointer",fontSize:"1rem"}}>✕</button>
+      {/* Cards circulares */}
+      {lista.length === 0 ? (
+        <div style={{textAlign:"center",padding:"3rem 1rem",color:"var(--text-muted)"}}>
+          <div style={{fontSize:"2.5rem",marginBottom:"0.75rem"}}>{aba==="basica"?"🟠":"🔵"}</div>
+          <p style={{fontStyle:"italic"}}>
+            {aba==="basica" ? "Nenhuma turma de Formação Básica." : "Nenhuma turma de Formação Técnica."}
+          </p>
+          <p style={{fontSize:"0.8rem",marginTop:"0.4rem"}}>Clique em + para adicionar.</p>
+        </div>
+      ) : (
+        <div className="turmas-grid" style={{
+          display:"grid",
+          gridTemplateColumns:"repeat(auto-fill, minmax(130px, 1fr))",
+          gap:"1rem"
+        }}>
+          {lista.map((t, i) => {
+            const cor = cores[i % cores.length]
+            const iniciais = t.nome.replace(/\s/g,"").slice(0,2).toUpperCase()
+            return (
+              <div key={t.id} onClick={()=>onSelectTurma(t)}
+                style={{
+                  display:"flex", flexDirection:"column", alignItems:"center",
+                  gap:"0.6rem", padding:"1rem 0.5rem", borderRadius:"14px",
+                  background:"var(--bg-card)", border:"1px solid var(--border)",
+                  cursor:"pointer", position:"relative", transition:"box-shadow 0.2s, transform 0.15s",
+                  boxShadow:"var(--shadow)"
+                }}
+                onMouseEnter={e=>{e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.18)";e.currentTarget.style.transform="translateY(-2px)"}}
+                onMouseLeave={e=>{e.currentTarget.style.boxShadow="var(--shadow)";e.currentTarget.style.transform="translateY(0)"}}>
+
+                {/* Botão remover */}
+                <button onClick={e=>remover(e,t.id)}
+                  style={{position:"absolute",top:"6px",right:"8px",background:"none",border:"none",
+                    cursor:"pointer",color:"var(--text-muted)",fontSize:"0.85rem",lineHeight:1,padding:"2px"}}>✕</button>
+
+                {/* Círculo com iniciais */}
+                <div style={{
+                  width:"72px", height:"72px", borderRadius:"50%",
+                  background:`linear-gradient(135deg, ${cor}dd, ${cor})`,
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  color:"white", fontWeight:"900", fontSize:"1.35rem",
+                  boxShadow:`0 4px 12px ${cor}55`, letterSpacing:"0.02em", flexShrink:0
+                }}>
+                  {iniciais}
                 </div>
-                <p style={{fontSize:"0.75rem",color:CORES_FBG[i%CORES_FBG.length],marginTop:"0.75rem",fontWeight:"600"}}>Ver planilha →</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Seção FTP */}
-      {(aba === "todas" || aba === "tecnica") && ftp.length > 0 && (
-        <div style={{marginBottom:"1.5rem"}}>
-          {aba === "todas" && (
-            <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.75rem"}}>
-              <div style={{width:"10px",height:"10px",borderRadius:"50%",background:"#2563EB",flexShrink:0}}/>
-              <span style={{fontWeight:"700",fontSize:"0.9rem",color:"#2563EB"}}>Formação Técnica</span>
-              <span style={{fontSize:"0.8rem",color:"var(--text-muted)"}}>— {ftp.length} turma{ftp.length!==1?"s":""}</span>
-            </div>
-          )}
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:"1rem"}}>
-            {ftp.map((t,i) => (
-              <div key={t.id} onClick={() => onSelectTurma(t)} className="card"
-                style={{padding:"1.25rem",cursor:"pointer",borderTop:"4px solid "+CORES_FTP[i%CORES_FTP.length]}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-                  <div>
-                    <div style={{display:"flex",alignItems:"center",gap:"0.5rem",marginBottom:"0.25rem"}}>
-                      <div style={{width:"32px",height:"32px",borderRadius:"50%",background:CORES_FTP[i%CORES_FTP.length],display:"flex",alignItems:"center",justifyContent:"center",color:"white",fontWeight:"800",fontSize:"0.8rem",flexShrink:0}}>
-                        {t.nome.replace(/\s/g,"").slice(0,2).toUpperCase()}
-                      </div>
-                      <p style={{fontWeight:"700",fontSize:"1.1rem",color:"var(--text)"}}>{t.nome}</p>
-                    </div>
-                    <p style={{fontSize:"0.85rem",color:"var(--text-muted)",marginTop:"0.2rem"}}>{t.disciplina}</p>
-                    <span style={{fontSize:"0.7rem",background:"#EFF6FF",color:"#2563EB",padding:"0.15rem 0.5rem",borderRadius:"999px",fontWeight:"600",marginTop:"0.5rem",display:"inline-block"}}>
-                      Formação Técnica
-                    </span>
-                  </div>
-                  <button onClick={e => remover(e,t.id)} style={{color:"var(--text-muted)",background:"none",border:"none",cursor:"pointer",fontSize:"1rem"}}>✕</button>
+                {/* Nome e disciplina */}
+                <div style={{textAlign:"center",width:"100%",padding:"0 0.25rem"}}>
+                  <p style={{fontWeight:"800",fontSize:"1rem",color:"var(--text)",lineHeight:1.2}}>
+                    {t.nome}
+                  </p>
+                  <p style={{fontSize:"0.7rem",color:"var(--text-muted)",marginTop:"0.2rem",
+                    whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%"}}>
+                    {t.disciplina}
+                  </p>
                 </div>
-                <p style={{fontSize:"0.75rem",color:CORES_FTP[i%CORES_FTP.length],marginTop:"0.75rem",fontWeight:"600"}}>Ver planilha →</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {lista.length === 0 && !form && (
-        <p style={{color:"var(--text-muted)",fontStyle:"italic",textAlign:"center",padding:"2rem"}}>
-          {aba === "basica" ? "Nenhuma turma de Formação Básica." : aba === "tecnica" ? "Nenhuma turma de Formação Técnica." : "Nenhuma turma registrada ainda."}
-        </p>
+                {/* Ver planilha */}
+                <span style={{fontSize:"0.7rem",color:cor,fontWeight:"700",marginTop:"0.1rem"}}>
+                  Ver planilha →
+                </span>
+              </div>
+            )
+          })}
+        </div>
       )}
     </div>
   )
