@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { db } from "../firebase"
 import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, where, getDocs, setDoc, getDoc } from "firebase/firestore"
 import jsPDF from "jspdf"
@@ -35,7 +35,7 @@ function limparMarkdown(t) {
 }
 
 export default function PlanilhaPage({ turma }) {
-  const [bimestre, setBimestre]             = useState(() => localStorage.getItem(`bimestre_${turma.id}`) || "1 Bimestre")
+  const [bimestre, setBimestre]             = useState("1 Bimestre")
   const [alunos, setAlunos]                 = useState([])
   const [notas, setNotas]                   = useState({})
   const [local, setLocal]                   = useState({})
@@ -49,18 +49,11 @@ export default function PlanilhaPage({ turma }) {
   const [palavrasChave, setPalavrasChave]   = useState("")
   const [relTexto, setRelTexto]             = useState("")
   const [relExiste, setRelExiste]           = useState(false)
-  const [relTextoDescritiva, setRelTextoDescritiva]     = useState("")
-  const [relTextoIndisciplina, setRelTextoIndisciplina] = useState("")
-  const [relExisteDescritiva, setRelExisteDescritiva]   = useState(false)
-  const [relExisteIndisciplina, setRelExisteIndisciplina] = useState(false)
   const [gerando, setGerando]               = useState(false)
   const [escola, setEscola]                 = useState("")
   const [escolaInput, setEscolaInput]       = useState("")
   const [editandoEscola, setEditandoEscola] = useState(false)
   const [apagandoTodos, setApagandoTodos]   = useState(false)
-  const [todasNotasModal, setTodasNotasModal] = useState({})
-  const [modalListaPDF, setModalListaPDF]   = useState(false)
-  const [listaFormacao, setListaFormacao]   = useState("tecnica")
 
   useEffect(() => {
     getDoc(doc(db,"config","professor")).then(d => {
@@ -76,10 +69,6 @@ export default function PlanilhaPage({ turma }) {
       setAlunos(lista)
     })
   }, [turma.id])
-
-  useEffect(() => {
-    localStorage.setItem(`bimestre_${turma.id}`, bimestre)
-  }, [bimestre, turma.id])
 
   useEffect(() => {
     const q = query(collection(db,"notas"), where("turmaId","==",turma.id), where("trimestre","==",bimestre))
@@ -121,7 +110,7 @@ export default function PlanilhaPage({ turma }) {
 
   const limparTurmaToda = async () => {
     if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os alunos, notas e relatórios desta turma. Tem certeza absoluta?")) return;
-    if (!confirm("🔴 Última chance: deseja realmente continuar? Esta ação é irreversível!")) return;
+    if (!confirm("🔄 Última chance: deseja realmente continuar? Esta ação é irreversível!")) return;
     setApagandoTodos(true);
     try {
       const qAlunos = query(collection(db, "alunos"), where("turmaId", "==", turma.id));
@@ -148,24 +137,31 @@ export default function PlanilhaPage({ turma }) {
   }
 
   const abrirRelatorio = async (aluno) => {
-    setModalAluno(aluno); setPalavrasChave(""); setRelTexto(""); setRelExiste(false); setRelTipo("descritiva"); setTodasNotasModal({})
-    setRelTextoDescritiva(""); setRelTextoIndisciplina(""); setRelExisteDescritiva(false); setRelExisteIndisciplina(false)
-    const qD = query(collection(db,"relatorios"), where("alunoId","==",aluno.id), where("bimestre","==",bimestre), where("tipo","==","descritiva"))
-    const snapD = await getDocs(qD)
-    const qI = query(collection(db,"relatorios"), where("alunoId","==",aluno.id), where("bimestre","==",bimestre), where("tipo","==","indisciplina"))
-    const snapI = await getDocs(qI)
-    if (!snapD.empty) { setRelTextoDescritiva(snapD.docs[0].data().texto); setRelExisteDescritiva(true); setRelTexto(snapD.docs[0].data().texto); setRelExiste(true) }
-    if (!snapI.empty) { setRelTextoIndisciplina(snapI.docs[0].data().texto); setRelExisteIndisciplina(true) }
+    setModalAluno(aluno); setPalavrasChave(""); setRelTexto(""); setRelExiste(false); setRelTipo("descritiva")
+    // Busca qualquer relatório existente do aluno neste bimestre (descritiva ou indisciplina)
+    const q = query(collection(db,"relatorios"), where("alunoId","==",aluno.id), where("bimestre","==",bimestre))
+    const snap = await getDocs(q)
+    if (!snap.empty) {
+      const rel = snap.docs[0].data()
+      setRelTexto(rel.texto)
+      setRelTipo(rel.tipo || "descritiva")
+      setRelExiste(true)
+    }
   }
 
+  // 🔥 FUNÇÃO GERAR RELATÓRIO REFATORADA – usando palavras-chave como base
   const gerarRelatorio = async () => {
     setGerando(true)
+
+    // Buscar notas do bimestre atual
     const notasAtuais = notas[modalAluno.id] || {}
     const temNotasAtuais = notasAtuais.atividades !== "" || notasAtuais.participacao !== "" || notasAtuais.comportamento !== ""
 
+    // Buscar notas de bimestres anteriores (apenas para contexto, se existirem)
     const todasNotas = {}
     for (const b of BIMESTRES) {
       if (b === bimestre) {
+        // já temos notasAtuais
         if (temNotasAtuais) todasNotas[b] = notasAtuais
       } else {
         const snap = await getDocs(query(collection(db,"notas"), where("alunoId","==",modalAluno.id), where("trimestre","==",b)))
@@ -183,6 +179,7 @@ export default function PlanilhaPage({ turma }) {
       b+": Atividades="+(n.atividades||"-")+", Participação="+(n.participacao||"-")+", Comportamento="+(n.comportamento||"-")
     ).join(" | ")
 
+    // Construção do prompt – FORÇANDO o uso das palavras-chave
     const palavras = palavrasChave.trim() || "Nenhuma palavra-chave fornecida"
     const obs = modalAluno.obs || "nenhuma"
 
@@ -194,7 +191,7 @@ export default function PlanilhaPage({ turma }) {
 2. **NÃO INVENTE** nenhuma informação que não esteja nessas palavras-chave.
 3. Se as palavras-chave descrevem dificuldades, o relatório deve abordá-las de forma clara e objetiva.
 4. Se as palavras-chave descrevem qualidades, destaque-as.
-5. Mencione as notas do aluno por bimestre de forma objetiva no relatório, citando os valores registrados.
+5. As notas (se existentes) servem apenas como contexto adicional, mas não devem ser o foco principal.
 6. Escreva em **linguagem simples, clara e direta**, em um único parágrafo.
 7. **NÃO** use títulos, asteriscos, markdown ou listas.
 8. **NÃO** invente assinaturas ou datas – elas serão adicionadas automaticamente.
@@ -210,21 +207,15 @@ Agora, escreva o relatório.`
     }
 
     try {
-      // CORREÇÃO APLICADA AQUI: Enviando os dados encapsulados em "message"
       const resp = await fetch("/api/chat", {
         method:"POST",
         headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({ message: prompt }) 
+        body:JSON.stringify({ prompt, model:"claude-haiku-4-5-20251001", max_tokens:600 })
       })
       const json = await resp.json()
-      
-      if (!resp.ok) {
-        throw new Error(json.error?.message || json.error || 'Erro interno da API');
-      }
-
-      const textoRaw = json.content?.find(b=>b.type==="text")?.text || "Erro ao gerar."
+      const textoRaw = json.texto || "Erro ao gerar."
       const texto = limparMarkdown(textoRaw)
-      
+      // Salva no banco
       await addDoc(collection(db,"relatorios"), {
         alunoId:modalAluno.id,
         alunoNome:modalAluno.nome,
@@ -235,9 +226,6 @@ Agora, escreva o relatório.`
         tipo:relTipo,
         criadoEm:new Date().toISOString()
       })
-      setTodasNotasModal(todasNotas)
-      if (relTipo === "descritiva") { setRelTextoDescritiva(texto); setRelExisteDescritiva(true) }
-      else { setRelTextoIndisciplina(texto); setRelExisteIndisciplina(true) }
       setRelTexto(texto); setRelExiste(true)
     } catch(err) { alert("Erro: "+err.message) }
     setGerando(false)
@@ -249,45 +237,28 @@ Agora, escreva o relatório.`
 
   const gerarPDFBlob = () => {
     const pdf = new jsPDF()
+    // Cabeçalho laranja
+    pdf.setFillColor(232,84,10); pdf.rect(0,0,210,42,"F")
+    pdf.setTextColor(255,255,255); pdf.setFontSize(16); pdf.setFont("helvetica","bold")
+    pdf.text("Avaliação Descritiva"+(relTipo==="indisciplina"?" — Indisciplina":""),14,14)
+    pdf.setFontSize(11); pdf.setFont("helvetica","normal")
+    pdf.text(modalAluno.nome,14,24)
+    pdf.text("Turma: "+turma.nome+" | "+turma.disciplina+" | "+bimestre,14,32)
+    if (escola) { pdf.setFontSize(9); pdf.text(escola,14,39) }
+    // Corpo do texto
+    pdf.setTextColor(0,0,0); pdf.setFontSize(11)
+    const lines = pdf.splitTextToSize(relTexto,182)
+    pdf.text(lines,14,52)
+    // Assinatura — Prof. Thiago Fernando + credenciais + data
+    const assinaturaY = 52 + lines.length * 7 + 16
     const dataHoje = new Date().toLocaleDateString("pt-BR")
     const cred = credenciais(turma.tipo)
-    let curY = 14
-
-    if (escola) {
-      pdf.setFontSize(11); pdf.setFont("helvetica","bold"); pdf.setTextColor(0,0,0)
-      pdf.text(escola.toUpperCase(), 105, curY, { align:"center" })
-      curY += 10
-    }
-
-    pdf.setFillColor(232,84,10); pdf.rect(0,curY,210,30,"F")
-    pdf.setTextColor(255,255,255); pdf.setFontSize(13); pdf.setFont("helvetica","bold")
-    pdf.text("Avaliação Descritiva"+(relTipo==="indisciplina"?" — Indisciplina":""), 105, curY+10, {align:"center"})
-    pdf.setFontSize(9); pdf.setFont("helvetica","normal")
-    pdf.text("Aluno: "+modalAluno.nome+"  |  Turma: "+turma.nome+"  |  "+turma.disciplina, 105, curY+19, {align:"center"})
-    pdf.text(bimestre+"  |  "+dataHoje, 105, curY+26, {align:"center"})
-    curY += 36
-
-    const notasRows = Object.entries(todasNotasModal).length > 0
-      ? Object.entries(todasNotasModal).map(([b,n]) => [b, n.atividades||"—", n.participacao||"—", n.comportamento||"—"])
-      : [[bimestre, notas[modalAluno.id]?.atividades||"—", notas[modalAluno.id]?.participacao||"—", notas[modalAluno.id]?.comportamento||"—"]]
-    autoTable(pdf, {
-      startY: curY,
-      head: [["Bimestre","Atividades","Participação","Comportamento"]],
-      body: notasRows,
-      styles: { fontSize:8, cellPadding:2, halign:"center" },
-      headStyles: { fillColor:[232,84,10], textColor:255, fontStyle:"bold", halign:"center" },
-      margin: { left:14, right:14 }, tableWidth:"wrap"
-    })
-    curY = pdf.lastAutoTable.finalY + 8
-
-    pdf.setFontSize(11); pdf.setFont("helvetica","normal"); pdf.setTextColor(0,0,0)
-    const lines = pdf.splitTextToSize(relTexto, 182)
-    pdf.text(lines, 14, curY)
-    curY += lines.length * 6 + 12
-
-    pdf.setFontSize(9); pdf.setFont("helvetica","italic"); pdf.setTextColor(80,80,80)
-    pdf.text("Prof. Thiago Fernando — "+cred, 14, curY)
-
+    pdf.setDrawColor(200,200,200); pdf.line(14, assinaturaY - 4, 100, assinaturaY - 4)
+    pdf.setFontSize(10); pdf.setFont("helvetica","bold")
+    pdf.text("Prof. Thiago Fernando",14, assinaturaY + 2)
+    pdf.setFontSize(8); pdf.setFont("helvetica","normal"); pdf.setTextColor(80,80,80)
+    pdf.text(cred, 14, assinaturaY + 9)
+    pdf.text(dataHoje, 14, assinaturaY + 15)
     return pdf
   }
 
@@ -323,108 +294,7 @@ Agora, escreva o relatório.`
     XLSX.writeFile(wb,turma.nome+"_"+bimestre+".xlsx"); setMenu(false)
   }
 
-  const gerarListaAbnt = () => {
-    const pdf = new jsPDF("landscape","mm","a4")
-    const dataHoje = new Date().toLocaleDateString("pt-BR")
-    const cred = listaFormacao === "tecnica"
-      ? "Graduando em Engenharia de Computação, Licenciado em Matemática"
-      : "Licenciado em História, Pós-graduado em Metodologia de Ensino"
-    const pageW = 297; const pageH = 210; const mL = 15; const mR = 15
-    let curY = 12
-
-    if (escola) {
-      pdf.setFontSize(12); pdf.setFont("helvetica","bold"); pdf.setTextColor(0,0,0)
-      pdf.text(escola.toUpperCase(), pageW/2, curY, {align:"center"})
-      curY += 5
-      pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.3)
-      pdf.line(mL, curY, pageW-mR, curY)
-      curY += 5
-    }
-    pdf.setFontSize(11); pdf.setFont("helvetica","bold"); pdf.setTextColor(0,0,0)
-    pdf.text("DIÁRIO DE CLASSE", pageW/2, curY, {align:"center"})
-    curY += 7
-
-    const fH = 7; let fX = mL
-    const campos = [
-      {l:"PROFESSOR:", v:"Prof. Thiago Fernando", w:65},
-      {l:"DISCIPLINA:", v:turma.disciplina, w:82},
-      {l:"TURMA:", v:turma.nome, w:25},
-      {l:"BIMESTRE:", v:bimestre, w:40},
-      {l:"DATA:", v:dataHoje, w:55}
-    ]
-    pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.2)
-    campos.forEach(f => {
-      pdf.rect(fX,curY,f.w,fH)
-      pdf.setFont("helvetica","bold"); pdf.setFontSize(6)
-      pdf.text(f.l, fX+1.5, curY+2.5)
-      pdf.setFont("helvetica","normal"); pdf.setFontSize(8)
-      pdf.text(String(f.v||""), fX+1.5, curY+6)
-      fX += f.w
-    })
-    curY += fH + 3
-
-    autoTable(pdf, {
-      startY: curY,
-      head: [["Nº","Nome do Aluno","Atividades","Participação","Comportamento","Observação"]],
-      body: alunos.map((a,i) => [
-        String(i+1).padStart(2,"0"), a.nome,
-        notas[a.id]?.atividades||"",
-        notas[a.id]?.participacao||"",
-        notas[a.id]?.comportamento||"",
-        a.obs||""
-      ]),
-      theme:"grid",
-      styles:{fontSize:8, cellPadding:1.5, textColor:[0,0,0], lineColor:[180,180,180], lineWidth:0.15},
-      headStyles:{fillColor:[232,84,10], textColor:[255,255,255], fontStyle:"bold", halign:"center", fontSize:8.5, cellPadding:2},
-      columnStyles:{
-        0:{halign:"center", cellWidth:10},
-        1:{cellWidth:90},
-        2:{halign:"center", cellWidth:27},
-        3:{halign:"center", cellWidth:27},
-        4:{halign:"center", cellWidth:27},
-        5:{cellWidth:"auto"}
-      },
-      alternateRowStyles:{fillColor:[248,248,248]},
-      margin:{left:mL, right:mR}
-    })
-
-    const totalPags = pdf.internal.getNumberOfPages()
-    for (let i = 1; i <= totalPags; i++) {
-      pdf.setPage(i)
-      pdf.setFontSize(7); pdf.setTextColor(130,130,130); pdf.setFont("helvetica","normal")
-      pdf.text("Página "+i+" / "+totalPags, pageW/2, pageH-4, {align:"center"})
-    }
-    pdf.setPage(totalPags); pdf.setTextColor(0,0,0)
-    curY = pdf.lastAutoTable.finalY + 8
-    if (curY + 22 > pageH - 8) { pdf.addPage("landscape"); pdf.setPage(pdf.internal.getNumberOfPages()); curY = 14 }
-    pdf.setFontSize(8.5); pdf.setFont("helvetica","normal")
-    pdf.setDrawColor(0,0,0); pdf.setLineWidth(0.3)
-    pdf.line(mL, curY, mL+80, curY)
-    pdf.text("Prof. Thiago Fernando", mL, curY+4)
-    pdf.text(cred, mL, curY+9)
-    pdf.setLineWidth(0.2)
-    pdf.rect(pageW-mR-48, curY-3, 48, 18)
-    pdf.setFontSize(7); pdf.setTextColor(150,150,150)
-    pdf.text("Visto / Carimbo", pageW-mR-24, curY+5, {align:"center"})
-    return pdf
-  }
-
-  const compartilharListaPDF = () => {
-    const pdf = gerarListaAbnt()
-    pdf.save("Lista_"+turma.nome+"_"+bimestre.replace(/ /g,"_")+".pdf")
-    setModalListaPDF(false)
-  }
-
-  const whatsappListaPDF = () => {
-    const pdf = gerarListaAbnt()
-    pdf.save("Lista_"+turma.nome+"_"+bimestre.replace(/ /g,"_")+".pdf")
-    setTimeout(() => {
-      const msg = "Lista de notas — "+turma.nome+" ("+turma.disciplina+") — "+bimestre
-      window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank")
-    }, 900)
-    setModalListaPDF(false)
-  }
-
+  // Extrair nomes do Excel
   const extrairNomesExcel = (rows) => {
     let headerRowIndex = -1;
     let nomeColIndex = -1;
@@ -513,25 +383,18 @@ Agora, escreva o relatório.`
           r.readAsDataURL(file);
         });
 
-        // CORREÇÃO APLICADA AQUI TAMBÉM: Usando a propriedade "message" para conversar com o backend
-        const resp = await fetch('/api/chat', {
+        const resp = await fetch('/api/extract-names', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: [
-              { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: base64 } },
-              { type: 'text', text: 'Extraia apenas os nomes completos dos alunos. Retorne SOMENTE os nomes, um por linha. IGNORE qualquer outra informação como: números de matrícula, turma, disciplina, data, cabeçalhos, rodapés, notas, assinaturas, etc. Se houver mais de um nome na mesma linha, separe em linhas diferentes. Não adicione numeração, pontuação ou textos extras. Apenas os nomes.' },
-            ]
-          }),
+          body: JSON.stringify({ base64 }),
         });
 
         const data = await resp.json();
         if (data.error) {
-          throw new Error(data.error.message || data.error || 'Erro retornado pela API da Anthropic');
+          throw new Error(data.error || 'Erro retornado pelo servidor');
         }
 
-        const texto = data.content?.find((b) => b.type === 'text')?.text || '';
-        const lista = texto.split(/\r?\n/).map((n) => n.trim()).filter((n) => n.length > 2 && /[a-zA-ZÀ-ÿ]/.test(n));
+        const lista = (data.nomes || []).filter((n) => n.length > 2 && /[a-zA-ZÀ-ÿ]/.test(n));
 
         if (lista.length > 0) {
           const unicos = Array.from(new Set(lista));
@@ -552,15 +415,7 @@ Agora, escreva o relatório.`
   };
 
   const confirmarImport = async () => {
-    const existentes = new Set(alunos.map(a => a.nome.trim().toLowerCase()))
-    const novos = nomesEditados.filter(n => n.trim().length > 2 && !existentes.has(n.trim().toLowerCase()))
-    if (novos.length === 0) {
-      alert("Nenhum aluno novo — todos ja existem nesta turma.")
-      setNomesEditados([]); setImportando(false)
-      return
-    }
-    for (const n of novos) await addDoc(collection(db,"alunos"),{nome:n.trim(),turmaId:turma.id,obs:""})
-    alert(novos.length + " alunos importados com sucesso!")
+    for (const n of nomesEditados.filter(n=>n.trim().length>2)) await addDoc(collection(db,"alunos"),{nome:n.trim(),turmaId:turma.id,obs:""})
     setNomesEditados([]); setImportando(false)
   }
 
@@ -578,10 +433,10 @@ Agora, escreva o relatório.`
           <button className="btn-primary" onClick={()=>setMenu(!menu)} style={{display:"flex",alignItems:"center",gap:"0.5rem"}}>☰ Ações</button>
           {menu && (
             <div style={{position:"absolute",top:"110%",left:0,background:"var(--bg-card)",border:"1px solid var(--border)",borderRadius:"10px",boxShadow:"0 4px 16px rgba(0,0,0,0.15)",zIndex:100,minWidth:"210px",overflow:"hidden"}}>
-                            <button style={btnMenu} onClick={exportarExcel}>📊 Exportar Excel</button>
+              <button style={btnMenu} onClick={exportarPDF}>📄 Exportar PDF</button>
+              <button style={btnMenu} onClick={exportarExcel}>📊 Exportar Excel</button>
               <button style={btnMenu} onClick={()=>{setImportando(true);setMenu(false)}}>📥 Importar Lista (PDF / Excel)</button>
-              <button style={btnMenu} onClick={()=>{setEditandoEscola(true);setMenu(false)}}>🏫 {escola||"Definir Escola"}</button>
-              <button style={{...btnMenu,borderBottom:"none"}} onClick={()=>{setModalListaPDF(true);setMenu(false)}}>📤 Compartilhar Lista — {bimestre}</button>
+              <button style={{...btnMenu,borderBottom:"none"}} onClick={()=>{setEditandoEscola(true);setMenu(false)}}>🏫 {escola||"Definir Escola"}</button>
             </div>
           )}
         </div>
@@ -622,36 +477,6 @@ Agora, escreva o relatório.`
         </div>
       )}
 
-      {modalListaPDF && (
-        <div style={overlay}>
-          <div style={{...modal,maxWidth:"420px"}}>
-            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
-              <h3 style={{fontWeight:"700",color:"var(--text)"}}>📤 Compartilhar Lista</h3>
-              <button onClick={()=>setModalListaPDF(false)} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:"1.2rem"}}>✕</button>
-            </div>
-            <div style={{background:"var(--bg)",borderRadius:"8px",padding:"0.75rem",marginBottom:"1rem",fontSize:"0.85rem"}}>
-              <p><strong style={{color:"var(--text)"}}>{turma.nome}</strong> — {turma.disciplina}</p>
-              {escola && <p style={{marginTop:"0.25rem",color:"var(--text-muted)"}}>{escola}</p>}
-              <p style={{marginTop:"0.25rem",color:"var(--text-muted)"}}>{alunos.length} alunos | {bimestre}</p>
-            </div>
-            <p style={{fontSize:"0.85rem",fontWeight:"600",color:"var(--text)",marginBottom:"0.5rem"}}>Área de formação:</p>
-            <div style={{display:"flex",gap:"0.5rem",marginBottom:"1.25rem"}}>
-              <button onClick={()=>setListaFormacao("tecnica")} style={{flex:1,padding:"0.6rem",borderRadius:"8px",border:"2px solid",borderColor:listaFormacao==="tecnica"?"var(--accent)":"var(--border)",background:listaFormacao==="tecnica"?"var(--accent-light)":"transparent",color:listaFormacao==="tecnica"?"var(--accent)":"var(--text-muted)",fontWeight:"600",cursor:"pointer",fontSize:"0.8rem"}}>
-                💻 Tecnológica
-              </button>
-              <button onClick={()=>setListaFormacao("humanas")} style={{flex:1,padding:"0.6rem",borderRadius:"8px",border:"2px solid",borderColor:listaFormacao==="humanas"?"var(--accent)":"var(--border)",background:listaFormacao==="humanas"?"var(--accent-light)":"transparent",color:listaFormacao==="humanas"?"var(--accent)":"var(--text-muted)",fontWeight:"600",cursor:"pointer",fontSize:"0.8rem"}}>
-                📚 Humanas
-              </button>
-            </div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0.5rem",marginBottom:"0.5rem"}}>
-              <button className="btn-primary" onClick={compartilharListaPDF} style={{fontSize:"0.85rem"}}>📄 Baixar PDF</button>
-              <button onClick={whatsappListaPDF} style={{background:"#128C7E",color:"white",border:"none",borderRadius:"8px",padding:"0.6rem",cursor:"pointer",fontSize:"0.85rem",fontWeight:"600"}}>📱 WhatsApp + PDF</button>
-            </div>
-            <button className="btn-ghost" onClick={()=>setModalListaPDF(false)} style={{width:"100%",fontSize:"0.85rem"}}>Cancelar</button>
-          </div>
-        </div>
-      )}
-
       {importando && (
         <div style={overlay}>
           <div style={modal}>
@@ -687,13 +512,13 @@ Agora, escreva o relatório.`
                 <h3 style={{fontWeight:"700",color:"var(--text)"}}>Avaliação Descritiva</h3>
                 <p style={{fontSize:"0.8rem",color:"var(--text-muted)"}}>{modalAluno.nome} | {turma.nome} | {bimestre}</p>
               </div>
-              <button onClick={()=>{setModalAluno(null);setRelTexto("");setRelTextoDescritiva("");setRelTextoIndisciplina("");setRelExiste(false);setRelExisteDescritiva(false);setRelExisteIndisciplina(false)}} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:"1.2rem"}}>✕</button>
+              <button onClick={()=>{setModalAluno(null);setRelTexto("")}} style={{background:"none",border:"none",cursor:"pointer",color:"var(--text-muted)",fontSize:"1.2rem"}}>✕</button>
             </div>
             {!relExiste && (
               <div style={{marginBottom:"1rem"}}>
                 <div style={{display:"flex",gap:"0.5rem",marginBottom:"1rem"}}>
-                  <button onClick={()=>{setRelTipo("descritiva");setRelTexto(relTextoDescritiva);setRelExiste(relExisteDescritiva)}} className={relTipo==="descritiva"?"btn-primary":"btn-ghost"} style={{flex:1,fontSize:"0.85rem"}}>📝 Padrão</button>
-                  <button onClick={()=>{setRelTipo("indisciplina");setRelTexto(relTextoIndisciplina);setRelExiste(relExisteIndisciplina)}} style={{flex:1,fontSize:"0.85rem",border:"none",borderRadius:"8px",padding:"0.6rem",cursor:"pointer",fontWeight:"600",background:relTipo==="indisciplina"?"#DC2626":"transparent",color:relTipo==="indisciplina"?"white":"#DC2626",border:relTipo==="indisciplina"?"none":"1px solid #DC2626"}}>⚠️ Indisciplina</button>
+                  <button onClick={()=>setRelTipo("descritiva")} className={relTipo==="descritiva"?"btn-primary":"btn-ghost"} style={{flex:1,fontSize:"0.85rem"}}>📝 Padrão</button>
+                  <button onClick={()=>setRelTipo("indisciplina")} style={{flex:1,fontSize:"0.85rem",border:"none",borderRadius:"8px",padding:"0.6rem",cursor:"pointer",fontWeight:"600",background:relTipo==="indisciplina"?"#DC2626":"transparent",color:relTipo==="indisciplina"?"white":"#DC2626",border:relTipo==="indisciplina"?"none":"1px solid #DC2626"}}>⚠️ Indisciplina</button>
                 </div>
                 <label style={{fontSize:"0.85rem",fontWeight:"600",color:"var(--text)",display:"block",marginBottom:"0.4rem"}}>
                   Palavras-chave / referências:
@@ -732,10 +557,10 @@ Agora, escreva o relatório.`
         </div>
       )}
 
-      <div className="card" style={{overflow:"auto",maxHeight:"calc(100vh - 150px)",marginBottom:"1rem"}}>
+      <div className="card" style={{overflowX:"auto",marginBottom:"1rem"}}>
         <table style={{width:"100%",borderCollapse:"collapse",fontSize:"0.9rem"}}>
-          <thead className="thead-sticky">
-            <tr>
+          <thead>
+            <tr style={{borderBottom:"2px solid var(--border)"}}>
               <th style={{padding:"0.75rem 0.5rem",textAlign:"left",color:"var(--text-muted)",fontWeight:"600",fontSize:"0.75rem",textTransform:"uppercase"}}>#</th>
               <th style={{padding:"0.75rem 0.5rem",textAlign:"left",color:"var(--text-muted)",fontWeight:"600",fontSize:"0.75rem",textTransform:"uppercase",minWidth:"10rem"}}>Aluno</th>
               {LABELS.map(l=><th key={l} style={{padding:"0.75rem 0.5rem",textAlign:"center",color:"var(--text-muted)",fontWeight:"600",fontSize:"0.75rem",textTransform:"uppercase",minWidth:"5.5rem"}}>{l}</th>)}
@@ -750,7 +575,7 @@ Agora, escreva o relatório.`
                 <td style={{padding:"0.5rem",color:"var(--text-muted)",fontSize:"0.8rem",textAlign:"center"}}>{String(i+1).padStart(2,"00")}</td>
                 <td style={{padding:"0.5rem",color:"var(--text)",fontWeight:"500"}}>{a.nome}</td>
                 {CRITERIOS.map(c=>{const val=getVal(a.id,c);return <td key={c} style={{padding:"0.3rem",textAlign:"center"}}><input type="number" min="0" max="10" step="0.5" value={val} onChange={e=>onChange(a.id,c,e.target.value)} onBlur={e=>onBlur(a.id,c,e.target.value)} className={"nota-input "+corNota(val)} /></td>})}
-                <td style={{padding:"0.3rem"}}><input type="text" defaultValue={a.obs||""} onBlur={e=>onBlur(a.id,"obs",e.target.value)} placeholder="Ex: transferido..." className="obs-input" /></td>
+                <td style={{padding:"0.3rem"}}><input type="text" value={local[a.id+"_obs"] !== undefined ? local[a.id+"_obs"] : (a.obs||"")} onChange={e=>onChange(a.id,"obs",e.target.value)} onBlur={e=>onBlur(a.id,"obs",e.target.value)} placeholder="Ex: transferido..." className="obs-input" /></td>
                 <td style={{padding:"0.3rem",textAlign:"center",whiteSpace:"nowrap"}}>
                   <button onClick={()=>abrirRelatorio(a)} title="Avaliação Descritiva" style={{background:"none",border:"none",cursor:"pointer",fontSize:"1rem",marginRight:"0.25rem"}}>📝</button>
                   <button onClick={()=>delAluno(a.id)} style={{color:"var(--text-muted)",background:"none",border:"none",cursor:"pointer",fontSize:"1rem"}}>✕</button>

@@ -10,30 +10,21 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'icon.svg'],
+      includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'Cronos - Material de Apoio',
-        short_name: 'Cronos',
-        description: 'Aplicativo de apoio pedagógico e notas escolares',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
+        name: 'Diário do Professor',
+        short_name: 'Diário Prof',
+        description: 'Aplicativo de registro de avaliações por turma',
+        theme_color: '#3D1A0A',
+        background_color: '#F2DEB3',
         display: 'standalone',
         orientation: 'portrait',
+        start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
+            src: '/favicon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml',
             purpose: 'any maskable'
           }
         ]

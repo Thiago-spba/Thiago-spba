@@ -1,44 +1,37 @@
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido' });
-  }
-
-  const { message } = req.body;
-
-  if (!message) {
-    return res.status(400).json({ error: 'Mensagem não fornecida' });
-  }
-
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.error("Falha Crítica: ANTHROPIC_API_KEY ausente nas variáveis de ambiente.");
-    return res.status(500).json({ error: 'Erro de configuração no servidor.' });
+    return res.status(405).json({ error: 'MÃ©todo nÃ£o permitido. Use POST.' });
   }
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const { prompt, model = 'claude-haiku-4-5-20251001', max_tokens = 600 } = req.body;
+    if (!prompt) return res.status(400).json({ error: 'Prompt nÃ£o fornecido.' });
+
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'Chave de API nÃ£o configurada.' });
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
+        'x-api-key': apiKey,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', // Atualizado para a versão 3.5 Haiku
-        max_tokens: 1024,
-        messages: [{ role: 'user', content: message }]
+        model,
+        max_tokens,
+        messages: [{ role: 'user', content: prompt }]
       })
     });
 
-    const data = await response.json();
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error.message || 'Erro da API Anthropic');
 
-    if (!response.ok) {
-      console.error("Erro retornado pela Anthropic:", data);
-      return res.status(response.status).json(data);
-    }
+    const texto = data.content?.find((b) => b.type === 'text')?.text || '';
+    return res.status(200).json({ texto });
 
-    res.status(200).json(data);
   } catch (error) {
-    console.error("Erro interno da função Serverless:", error);
-    res.status(500).json({ error: 'Falha de rede ou erro interno no servidor.' });
+    console.error(error);
+    return res.status(500).json({ error: 'Erro interno ao gerar relatÃ³rio.' });
   }
 }

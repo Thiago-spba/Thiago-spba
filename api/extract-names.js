@@ -7,7 +7,7 @@
     const { base64 } = req.body;
     if (!base64) return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
 
-    const apiKey = process.env.VITE_ANTHROPIC_API_KEY;
+    const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'Chave de API não configurada.' });
 
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
