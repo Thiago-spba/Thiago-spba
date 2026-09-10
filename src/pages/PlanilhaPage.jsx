@@ -187,7 +187,20 @@ export default function PlanilhaPage({ turma }) {
     let nomes = []
     try {
       if (sincTipo === "texto") {
-        nomes = sincTexto.split(/\r?\n/)
+        // Usa IA para extrair só os nomes, ignorando "Aluno ativo", cabeçalhos, etc.
+        const respIA = await fetch("/api/chat", {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({
+            prompt: `Extraia apenas os nomes completos de alunos deste texto. Ignore qualquer linha que contenha status como "Aluno ativo", "Aluno inativo", cabeçalhos, números de matrícula, datas ou qualquer informação que não seja um nome de aluno. Retorne estritamente um nome por linha, sem numeração, sem explicações, sem linhas em branco.\n\n${sincTexto}`,
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 2000
+          })
+        })
+        const iaData = await respIA.json()
+        if (iaData.error) throw new Error(iaData.error)
+        nomes = (iaData.texto || "")
+          .split(/\r?\n/)
           .map(n => n.trim().replace(/^[-*•\d.)]+\s*/,""))
           .filter(n => n.length > 2 && /[a-zA-ZÀ-ÿ]/.test(n))
       } else if (sincTipo === "excel" && file) {
