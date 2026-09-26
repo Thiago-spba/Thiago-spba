@@ -3,6 +3,15 @@
     return res.status(405).json({ error: 'Método não permitido. Use POST.' });
   }
 
+  const secret = req.headers['x-api-secret'];
+  if (!secret || secret !== process.env.API_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const origin = req.headers.origin || req.headers.referer || '';
+  if (!origin.startsWith('https://notas-professor.vercel.app')) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
   try {
     const { base64 } = req.body;
     if (!base64) return res.status(400).json({ error: 'Nenhum arquivo enviado.' });

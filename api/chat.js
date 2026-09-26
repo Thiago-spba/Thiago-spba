@@ -3,6 +3,15 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método não permitido. Use POST.' });
   }
 
+  const secret = req.headers['x-api-secret'];
+  if (!secret || secret !== process.env.API_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const origin = req.headers.origin || req.headers.referer || '';
+  if (!origin.startsWith('https://notas-professor.vercel.app')) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+
   try {
     const { prompt, model = 'claude-haiku-4-5-20251001', max_tokens = 600 } = req.body;
     if (!prompt) return res.status(400).json({ error: 'Prompt não fornecido.' });

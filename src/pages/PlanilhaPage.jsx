@@ -9,6 +9,12 @@ const BIMESTRES = ["1 Bimestre","2 Bimestre","3 Bimestre","4 Bimestre"]
 const CRITERIOS = ["atividades","participacao","comportamento"]
 const LABELS    = ["Atividades","Participação","Comportamento"]
 
+// Segredo compartilhado enviado nas chamadas às rotas de IA (/api/chat,
+// /api/extract-names) — o servidor só responde se esse valor bater com
+// API_SECRET configurado no Vercel. Evita que qualquer pessoa na internet
+// use sua cota paga da Anthropic chamando essas rotas direto.
+const AI_HEADERS = { "Content-Type": "application/json", "x-api-secret": import.meta.env.VITE_API_SECRET || "" }
+
 function corNota(n) {
   if (n==="" || n===null || n===undefined) return ""
   const v = Number(n)
@@ -192,7 +198,7 @@ export default function PlanilhaPage({ turma }) {
         // Usa IA para extrair só os nomes, ignorando "Aluno ativo", cabeçalhos, etc.
         const respIA = await fetch("/api/chat", {
           method: "POST",
-          headers: {"Content-Type":"application/json"},
+          headers: AI_HEADERS,
           body: JSON.stringify({
             prompt: `Extraia apenas os nomes completos de alunos deste texto. Ignore qualquer linha que contenha status como "Aluno ativo", "Aluno inativo", cabeçalhos, números de matrícula, datas ou qualquer informação que não seja um nome de aluno. Retorne estritamente um nome por linha, sem numeração, sem explicações, sem linhas em branco.\n\n${sincTexto}`,
             model: "claude-haiku-4-5-20251001",
@@ -217,7 +223,7 @@ export default function PlanilhaPage({ turma }) {
           r.onerror = rej
           r.readAsDataURL(file)
         })
-        const resp = await fetch("/api/extract-names",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({base64})})
+        const resp = await fetch("/api/extract-names",{method:"POST",headers:AI_HEADERS,body:JSON.stringify({base64})})
         const data = await resp.json()
         if (data.error) throw new Error(data.error)
         nomes = data.nomes || []
@@ -321,7 +327,7 @@ Agora, escreva o relatório.`
     try {
       const resp = await fetch("/api/chat", {
         method:"POST",
-        headers:{"Content-Type":"application/json"},
+        headers:AI_HEADERS,
         body:JSON.stringify({ prompt, model:"claude-haiku-4-5-20251001", max_tokens:600 })
       })
       const json = await resp.json()
@@ -497,7 +503,7 @@ Agora, escreva o relatório.`
 
         const resp = await fetch('/api/extract-names', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: AI_HEADERS,
           body: JSON.stringify({ base64 }),
         });
 
@@ -532,7 +538,7 @@ Agora, escreva o relatório.`
     try {
       const resp = await fetch("/api/chat", {
         method: "POST",
-        headers: {"Content-Type":"application/json"},
+        headers: AI_HEADERS,
         body: JSON.stringify({
           prompt: `Extraia apenas os nomes completos de alunos deste texto. Ignore qualquer linha que contenha status como "Aluno ativo", "Aluno inativo", cabeçalhos, números de matrícula, datas, títulos de colunas ou qualquer informação que não seja um nome de pessoa. Retorne estritamente um nome por linha, sem numeração, sem marcadores, sem explicações, sem linhas em branco.\n\n${importTexto}`,
           model: "claude-haiku-4-5-20251001",
