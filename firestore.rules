@@ -22,6 +22,7 @@ service cloud.firestore {
     match /notas/{doc}      { allow read, write: if isAdmin(); }
     match /relatorios/{doc} { allow read, write: if isAdmin(); }
     match /config/{doc}     { allow read, write: if isAdmin(); }
+    match /caderno/{doc}    { allow read, write: if isAdmin(); }
 
     // Não usada em nenhum dos apps revisados até agora — privada por padrão
     match /quizzes/{doc}    { allow read, write: if isAdmin(); }

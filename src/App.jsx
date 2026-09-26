@@ -4,6 +4,7 @@ import { onAuthStateChanged } from "firebase/auth"
 import TurmasPage from "./pages/TurmasPage"
 import PlanilhaPage from "./pages/PlanilhaPage"
 import LoginPage from "./pages/LoginPage"
+import { AvisoProvider } from "./lib/avisos"
 
 // Lista de e-mails autorizados (acesso exclusivo)
 const EMAILS_AUTORIZADOS = ["thiago.rpba@gmail.com"]
@@ -110,8 +111,10 @@ export default function App() {
       </header>
 
       <main style={{ maxWidth: "960px", margin: "0 auto", padding: "1rem" }}>
-        {pagina === "turmas" && <TurmasPage onSelectTurma={irPlanilha} />}
-        {pagina === "planilha" && <PlanilhaPage turma={turmaSel} />}
+        <AvisoProvider>
+          {pagina === "turmas" && <TurmasPage onSelectTurma={irPlanilha} />}
+          {pagina === "planilha" && <PlanilhaPage turma={turmaSel} />}
+        </AvisoProvider>
       </main>
     </div>
   )

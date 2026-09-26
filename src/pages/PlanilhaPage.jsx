@@ -4,6 +4,8 @@ import { collection, addDoc, deleteDoc, doc, updateDoc, onSnapshot, query, where
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import * as XLSX from "xlsx"
+import { desenharCabecalhoOficio, desenharCaixaInfo, desenharRodape, escreverParagrafoJustificado, formatarNota, formatarBimestre, escolherTamanhoTabela, OFICIO_MARGEM } from "../lib/pdfOficio"
+import { useAviso } from "../lib/avisos"
 
 const BIMESTRES = ["1 Bimestre","2 Bimestre","3 Bimestre","4 Bimestre"]
 const CRITERIOS = ["atividades","participacao","comportamento"]
@@ -69,6 +71,7 @@ function compararListas(cadastrados, importados) {
 }
 
 export default function PlanilhaPage({ turma }) {
+  const { mostrarToast, confirmar } = useAviso()
   const [bimestre, setBimestre]             = useState(() => localStorage.getItem("bimestre_"+turma.id) || "1 Bimestre")
   const [alunos, setAlunos]                 = useState([])
   const [notas, setNotas]                   = useState({})
@@ -151,12 +154,12 @@ export default function PlanilhaPage({ turma }) {
   }
 
   const delAluno = async (id) => {
-    if (confirm("Remover esse aluno?")) await deleteDoc(doc(db,"alunos",id))
+    if (await confirmar("Esse aluno e todas as notas dele serão removidos.", { titulo: "Remover aluno?" })) await deleteDoc(doc(db,"alunos",id))
   }
 
   const limparTurmaToda = async () => {
-    if (!confirm("⚠️ ATENÇÃO: Isso apagará TODOS os alunos, notas e relatórios desta turma. Tem certeza absoluta?")) return;
-    if (!confirm("🔄 Última chance: deseja realmente continuar? Esta ação é irreversível!")) return;
+    if (!(await confirmar("Isso apagará TODOS os alunos, notas e relatórios desta turma.", { titulo: "Apagar turma inteira?" }))) return;
+    if (!(await confirmar("Deseja realmente continuar? Esta ação é irreversível!", { titulo: "Última chance" }))) return;
     setApagandoTodos(true);
     try {
       const qAlunos = query(collection(db, "alunos"), where("turmaId", "==", turma.id));
@@ -170,9 +173,9 @@ export default function PlanilhaPage({ turma }) {
       snapNotas.docs.forEach(d => promessas.push(deleteDoc(doc(db, "notas", d.id))));
       snapRelatorios.docs.forEach(d => promessas.push(deleteDoc(doc(db, "relatorios", d.id))));
       await Promise.all(promessas);
-      alert("✅ Turma limpa com sucesso!");
+      mostrarToast("sucesso", "Turma limpa com sucesso!");
     } catch (err) {
-      alert("❌ Erro ao limpar a turma: " + err.message);
+      mostrarToast("erro", "Erro ao limpar a turma: " + err.message);
     }
     setApagandoTodos(false);
   };
@@ -228,13 +231,13 @@ export default function PlanilhaPage({ turma }) {
         if (data.error) throw new Error(data.error)
         nomes = data.nomes || []
       }
-      if (nomes.length === 0) { alert("Nenhum nome encontrado. Verifique o arquivo ou o texto colado."); setSincProcessando(false); return }
+      if (nomes.length === 0) { mostrarToast("info", "Nenhum nome encontrado. Verifique o arquivo ou o texto colado."); setSincProcessando(false); return }
       const resultado = compararListas(alunos, nomes)
       setSincResultado(resultado)
       setSincRemoverSel(new Set(resultado.remover.map(a=>a.id)))
       setSincAdicionarSel(new Set(resultado.adicionar))
       setSincPasso(2)
-    } catch(err) { alert("Erro ao processar: "+err.message) }
+    } catch(err) { mostrarToast("erro", "Erro ao processar: "+err.message) }
     setSincProcessando(false)
   }
 
@@ -250,7 +253,7 @@ export default function PlanilhaPage({ turma }) {
       }
       await Promise.all(promessas)
       setSincModal(false)
-    } catch(err) { alert("Erro ao aplicar: "+err.message) }
+    } catch(err) { mostrarToast("erro", "Erro ao aplicar: "+err.message) }
     setSincAplicando(false)
   }
 
@@ -345,38 +348,47 @@ Agora, escreva o relatório.`
         criadoEm:new Date().toISOString()
       })
       setRelTexto(texto); setRelExiste(true)
-    } catch(err) { alert("Erro: "+err.message) }
+    } catch(err) { mostrarToast("erro", "Erro: "+err.message) }
     setGerando(false)
   }
 
-  const copiarTexto = () => { navigator.clipboard.writeText(relTexto); alert("Copiado!") }
+  const copiarTexto = () => {
+    navigator.clipboard.writeText(relTexto).then(
+      () => mostrarToast("sucesso", "Copiado!"),
+      () => mostrarToast("erro", "Não foi possível copiar. Tente selecionar o texto manualmente.")
+    )
+  }
 
   const whatsappTexto = () => window.open("https://wa.me/?text="+encodeURIComponent(relTexto),"_blank")
 
   const gerarPDFBlob = () => {
     const pdf = new jsPDF()
-    // Cabeçalho laranja
-    pdf.setFillColor(232,84,10); pdf.rect(0,0,210,42,"F")
-    pdf.setTextColor(255,255,255); pdf.setFontSize(16); pdf.setFont("helvetica","bold")
-    pdf.text("Avaliação Descritiva"+(relTipo==="indisciplina"?" — Indisciplina":""),14,14)
-    pdf.setFontSize(11); pdf.setFont("helvetica","normal")
-    pdf.text(modalAluno.nome,14,24)
-    pdf.text("Turma: "+turma.nome+" | "+turma.disciplina+" | "+bimestre,14,32)
-    if (escola) { pdf.setFontSize(9); pdf.text(escola,14,39) }
-    // Corpo do texto
-    pdf.setTextColor(0,0,0); pdf.setFontSize(11)
-    const lines = pdf.splitTextToSize(relTexto,182)
-    pdf.text(lines,14,52)
+    const ehIndisciplina = relTipo === "indisciplina"
+    desenharCabecalhoOficio(pdf, {
+      escola,
+      subtitulo: ehIndisciplina
+        ? "Relatório Interno de Acompanhamento Disciplinar"
+        : "Relatório Interno de Avaliação Descritiva"
+    })
+    const y1 = desenharCaixaInfo(pdf, [
+      ["Professor:", "Thiago Fernando"],
+      ["Aluno(a):", modalAluno.nome],
+      ["Turma:", turma.nome + " | " + turma.disciplina],
+      ["Bimestre:", formatarBimestre(bimestre)],
+    ])
+    // Corpo do texto — parágrafo justificado, fonte 12, espaçamento 1,5
+    const y2 = escreverParagrafoJustificado(pdf, relTexto, y1 + 4)
     // Assinatura — Prof. Thiago Fernando + credenciais + data
-    const assinaturaY = 52 + lines.length * 7 + 16
+    const assinaturaY = y2 + 14
     const dataHoje = new Date().toLocaleDateString("pt-BR")
     const cred = credenciais(turma.tipo)
-    pdf.setDrawColor(200,200,200); pdf.line(14, assinaturaY - 4, 100, assinaturaY - 4)
-    pdf.setFontSize(10); pdf.setFont("helvetica","bold")
-    pdf.text("Prof. Thiago Fernando",14, assinaturaY + 2)
-    pdf.setFontSize(8); pdf.setFont("helvetica","normal"); pdf.setTextColor(80,80,80)
-    pdf.text(cred, 14, assinaturaY + 9)
-    pdf.text(dataHoje, 14, assinaturaY + 15)
+    pdf.setDrawColor(180,180,180); pdf.line(OFICIO_MARGEM, assinaturaY - 5, OFICIO_MARGEM + 76, assinaturaY - 5)
+    pdf.setFontSize(9.5); pdf.setFont("helvetica","bold"); pdf.setTextColor(15,23,42)
+    pdf.text("Prof. Thiago Fernando",OFICIO_MARGEM, assinaturaY)
+    pdf.setFontSize(8); pdf.setFont("helvetica","normal"); pdf.setTextColor(100,116,139)
+    pdf.text(cred, OFICIO_MARGEM, assinaturaY + 6)
+    pdf.text(dataHoje, OFICIO_MARGEM, assinaturaY + 11)
+    desenharRodape(pdf, escola)
     return pdf
   }
 
@@ -387,21 +399,88 @@ Agora, escreva o relatório.`
   const whatsappPDF = () => {
     exportarRelatorioPDF()
     setTimeout(() => {
-      const msg = "Avaliação Descritiva de "+modalAluno.nome+" ("+turma.nome+" — "+bimestre+") gerada. Segue o PDF em anexo."
+      const msg = "Avaliação Descritiva de "+modalAluno.nome+" ("+turma.nome+" — "+formatarBimestre(bimestre)+") gerada. Segue o PDF em anexo."
       window.open("https://wa.me/?text="+encodeURIComponent(msg),"_blank")
     }, 800)
   }
 
   const exportarPDF = () => {
-    const pdf = new jsPDF("landscape")
-    pdf.setFillColor(232,84,10); pdf.rect(0,0,297,28,"F")
-    pdf.setTextColor(255,255,255); pdf.setFontSize(16); pdf.setFont("helvetica","bold")
-    pdf.text("Diário do Professor",14,12)
-    pdf.setFontSize(9); pdf.setFont("helvetica","normal")
-    pdf.text("Turma: "+turma.nome+"  |  "+turma.disciplina+(escola?"  |  "+escola:""),14,20)
-    pdf.text(bimestre+"  |  Gerado em: "+new Date().toLocaleDateString("pt-BR"),14,26)
-    pdf.setTextColor(0,0,0)
-    autoTable(pdf,{startY:32,head:[["#","Aluno","Atividades","Participação","Comportamento","Observação"]],body:alunos.map((a,i)=>[String(i+1).padStart(2,"00"),a.nome,notas[a.id]?.atividades??"",notas[a.id]?.participacao??"",notas[a.id]?.comportamento??"",notas[a.id]?.obs||""]),styles:{fontSize:9,cellPadding:4},headStyles:{fillColor:[232,84,10],textColor:255,fontStyle:"bold"},alternateRowStyles:{fillColor:[249,250,251]}})
+    const pdf = new jsPDF() // retrato, igual ao modelo de ofício
+    const largura = pdf.internal.pageSize.getWidth()
+
+    // Este relatório usa uma margem lateral menor que os demais (14mm em vez
+    // dos 20mm padrão): assim a tabela ganha mais largura pra caixa de nomes,
+    // permitindo uma fonte maior/mais legível sem precisar de mais páginas.
+    // Os outros relatórios (Avaliação Descritiva) continuam com 20mm.
+    const margemNotas = 14
+
+    desenharCabecalhoOficio(pdf, { escola, subtitulo: "Relatório Interno de Notas", margem: margemNotas })
+    const y1 = desenharCaixaInfo(pdf, [
+      ["Professor:", "Thiago Fernando"],
+      ["Disciplina:", turma.disciplina],
+      ["Turma:", turma.nome],
+      ["Bimestre:", formatarBimestre(bimestre)],
+    ], 36, margemNotas)
+
+    const paragrafo = `À Coordenação Pedagógica: segue a relação de notas da turma ${turma.nome} (${turma.disciplina}), referente ao ${formatarBimestre(bimestre).toLowerCase()}.`
+    const yTabela = escreverParagrafoJustificado(pdf, paragrafo, y1 + 4, { tamanhoFonte: 10.5, entrelinha: 1.2, margem: margemNotas }) + 1
+
+    // Divide os alunos em duas colunas lado a lado, como no modelo.
+    // Importante: é UMA tabela só, com 9 colunas (4 + espaçador + 4) — cada
+    // "linha visual" já contém o par esquerda/direita. Isso garante que,
+    // se a lista não couber numa página, as duas colunas viram de página
+    // juntas (uma tabela = uma paginação só, sem desalinhar).
+    const metade = Math.ceil(alunos.length / 2)
+    const colEsq = alunos.slice(0, metade)
+    const colDir = alunos.slice(metade)
+    const linha = a => a ? [a.nome, formatarNota(notas[a.id]?.atividades), formatarNota(notas[a.id]?.participacao), formatarNota(notas[a.id]?.comportamento)] : ["","","",""]
+    const body = colEsq.map((a, i) => [...linha(a), "", ...linha(colDir[i])])
+
+    // Larguras de coluna fixas (não mudam com o tamanho da fonte — só a
+    // fonte/o espaçamento interno mudam). "Aluno" fica com 58mm de cada lado,
+    // o resto (Ativ./Part./Comp. + espaçador) cabe nos 14mm de margem.
+    const colunasTabela = {
+      0: { cellWidth: 57 }, 1: { cellWidth: 10, halign: "center" }, 2: { cellWidth: 10, halign: "center" }, 3: { cellWidth: 10, halign: "center" },
+      4: { cellWidth: 4, lineWidth: 0, fillColor: [255,255,255] },
+      5: { cellWidth: 57 }, 6: { cellWidth: 10, halign: "center" }, 7: { cellWidth: 10, halign: "center" }, 8: { cellWidth: 10, halign: "center" },
+    }
+
+    const desenharTabelaNotas = (pdfAlvo, { fontSize, cellPadding }) => {
+      autoTable(pdfAlvo, {
+        startY: yTabela,
+        theme: "grid",
+        styles: { fontSize, cellPadding, textColor: [30,41,59], lineColor: [226,232,240], lineWidth: 0.2 },
+        headStyles: { fillColor: [243,244,246], textColor: [15,23,42], fontStyle: "bold", lineColor: [226,232,240] },
+        alternateRowStyles: { fillColor: [249,250,251] },
+        columnStyles: colunasTabela,
+        head: [["Aluno", "At.", "Pt.", "Cp.", "", "Aluno", "At.", "Pt.", "Cp."]],
+        body,
+        margin: { left: margemNotas, right: margemNotas },
+      })
+    }
+
+    // Tenta do maior fontSize pro menor: turma pequena cabe com letra grande
+    // (até 12pt), turma grande (ex.: 70 alunos) vai encolhendo — mas nunca
+    // passa do "piso" de 7pt (abaixo disso a letra fica difícil de ler); se
+    // nem no piso couber numa página só, o relatório vira 2+ páginas em vez
+    // de espremer mais a fonte.
+    const CANDIDATOS_TABELA_NOTAS = [
+      { fontSize: 12,   cellPadding: 1.3  },
+      { fontSize: 11,   cellPadding: 1.2  },
+      { fontSize: 10.5, cellPadding: 1.15 },
+      { fontSize: 10,   cellPadding: 1.1  },
+      { fontSize: 9.5,  cellPadding: 1.0  },
+      { fontSize: 9,    cellPadding: 0.95 },
+      { fontSize: 8.5,  cellPadding: 0.9  },
+      { fontSize: 8,    cellPadding: 0.85 },
+      { fontSize: 7.5,  cellPadding: 0.8  },
+      { fontSize: 7,    cellPadding: 0.75 }, // piso
+    ]
+    const tamanhoEscolhido = escolherTamanhoTabela(desenharTabelaNotas, CANDIDATOS_TABELA_NOTAS)
+
+    desenharTabelaNotas(pdf, tamanhoEscolhido)
+
+    desenharRodape(pdf, escola, margemNotas)
     pdf.save(turma.nome+"_"+bimestre+".pdf"); setMenu(false)
   }
 
@@ -483,10 +562,10 @@ Agora, escreva o relatório.`
         if (nomesExtraidos.length > 0) {
           setNomesEditados(nomesExtraidos);
         } else {
-          alert('Nenhum nome de aluno foi encontrado na planilha. Verifique se o arquivo possui uma coluna com os nomes.');
+          mostrarToast("info", 'Nenhum nome de aluno foi encontrado na planilha. Verifique se o arquivo possui uma coluna com os nomes.');
         }
       } catch (err) {
-        alert('Erro ao ler arquivo Excel: ' + err.message);
+        mostrarToast("erro", 'Erro ao ler arquivo Excel: ' + err.message);
       }
       setCarregando(false);
       return;
@@ -519,16 +598,16 @@ Agora, escreva o relatório.`
           const nomesFiltrados = unicos.filter(n => n.split(' ').length >= 2);
           setNomesEditados(nomesFiltrados.length > 0 ? nomesFiltrados : unicos);
         } else {
-          alert('A IA não conseguiu identificar nomes no PDF fornecido.');
+          mostrarToast("info", 'A IA não conseguiu identificar nomes no PDF fornecido.');
         }
       } catch (err) {
-        alert('Erro na extração do PDF: ' + err.message);
+        mostrarToast("erro", 'Erro na extração do PDF: ' + err.message);
       }
       setCarregando(false);
       return;
     }
 
-    alert('Formato não suportado. Por favor, envie um arquivo .pdf, .xlsx, .xls ou .csv.');
+    mostrarToast("info", 'Formato não suportado. Por favor, envie um arquivo .pdf, .xlsx, .xls ou .csv.');
     setCarregando(false);
   };
 
@@ -551,9 +630,9 @@ Agora, escreva o relatório.`
         .split(/\r?\n/)
         .map(n => n.trim().replace(/^[-*•\d.)]+\s*/,""))
         .filter(n => n.length > 2 && /[a-zA-ZÀ-ÿ]/.test(n))
-      if (nomes.length === 0) { alert("A IA não encontrou nomes no texto. Tente colar mais linhas ou verifique o conteúdo."); setCarregando(false); return }
+      if (nomes.length === 0) { mostrarToast("info", "A IA não encontrou nomes no texto. Tente colar mais linhas ou verifique o conteúdo."); setCarregando(false); return }
       setNomesEditados(nomes)
-    } catch(err) { alert("Erro: "+err.message) }
+    } catch(err) { mostrarToast("erro", "Erro: "+err.message) }
     setCarregando(false)
   }
 
